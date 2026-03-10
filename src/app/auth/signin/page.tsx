@@ -1,17 +1,31 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAnalytics } from '@/hooks/use-analytics';
 
-export default function SignInPage() {
+function SignInPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { trackOnce } = useAnalytics();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('google_signup') === '1') {
+      trackOnce('signup_completed', { method: 'google' });
+      router.replace('/compare');
+      return;
+    }
+
+    if (searchParams.get('authError') === 'google') {
+      setError('Google sign-in failed. Please try again.');
+    }
+  }, [router, searchParams, trackOnce]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +49,7 @@ export default function SignInPage() {
       }
 
       if (mode === 'signup') {
-        trackOnce('signup_completed');
+        trackOnce('signup_completed', { method: 'email' });
       }
 
       router.push('/compare');
@@ -46,11 +60,61 @@ export default function SignInPage() {
     }
   };
 
+  const handleGoogleSignIn = () => {
+    setGoogleLoading(true);
+    setError(null);
+
+    const callbackURL = `${window.location.origin}/compare`;
+    const newUserCallbackURL = `${window.location.origin}/auth/signin?google_signup=1`;
+    const errorCallbackURL = `${window.location.origin}/auth/signin?authError=google`;
+    const form = document.createElement('form');
+
+    form.method = 'POST';
+    form.action = '/api/auth/sign-in/social';
+    form.style.display = 'none';
+
+    const fields = {
+      provider: 'google',
+      callbackURL,
+      newUserCallbackURL,
+      errorCallbackURL,
+    };
+
+    for (const [name, value] of Object.entries(fields)) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+  };
+
   return (
     <div className="max-w-sm mx-auto pt-12 space-y-6">
       <h1 className="text-2xl font-bold text-center">
         {mode === 'signin' ? 'Sign in' : 'Create account'}
       </h1>
+
+      <button
+        type="button"
+        onClick={handleGoogleSignIn}
+        disabled={googleLoading || loading}
+        className="w-full py-3 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-900 font-medium text-sm touch-target disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+      >
+        {googleLoading ? 'Redirecting to Google...' : 'Continue with Google'}
+      </button>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+          <div className="w-full border-t border-gray-200" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-white px-2 text-gray-500">or use email</span>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -106,5 +170,13 @@ export default function SignInPage() {
         )}
       </p>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className="max-w-sm mx-auto pt-12 text-center text-sm text-gray-500">Loading sign-in...</div>}>
+      <SignInPageContent />
+    </Suspense>
   );
 }
