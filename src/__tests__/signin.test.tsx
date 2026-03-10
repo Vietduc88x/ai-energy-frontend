@@ -39,21 +39,15 @@ describe('SignInPage', () => {
     expect(screen.getByRole('button', { name: /continue with google/i })).toBeInTheDocument();
   });
 
-  it('submits the Google social sign-in form with callback URLs', async () => {
-    const originalCreateElement = document.createElement.bind(document);
-    const submitSpy = vi.fn();
-
-    vi.spyOn(document, 'createElement').mockImplementation(((tagName: string) => {
-      const element = originalCreateElement(tagName);
-      if (tagName === 'form') {
-        Object.defineProperty(element, 'submit', { value: submitSpy });
-      }
-      return element;
-    }) as typeof document.createElement);
-
+  it('sends Google sign-in fetch with correct callback URLs', async () => {
     Object.defineProperty(window, 'location', {
-      value: { origin: 'https://agent.techmadeeasy.info' },
+      value: { origin: 'https://agent.techmadeeasy.info', href: '' },
       writable: true,
+    });
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ url: 'https://accounts.google.com/o/oauth2/auth' }),
     });
 
     const SignInPage = (await import('@/app/auth/signin/page')).default;
@@ -61,21 +55,18 @@ describe('SignInPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /continue with google/i }));
 
-    expect(submitSpy).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/auth/sign-in/social'),
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
 
-    const form = document.body.lastElementChild as HTMLFormElement;
-    expect(form.action).toContain('/api/auth/sign-in/social');
-    expect(form.method.toLowerCase()).toBe('post');
-
-    const inputs = Array.from(form.querySelectorAll('input')).reduce<Record<string, string>>((acc, input) => {
-      acc[(input as HTMLInputElement).name] = (input as HTMLInputElement).value;
-      return acc;
-    }, {});
-
-    expect(inputs.provider).toBe('google');
-    expect(inputs.callbackURL).toBe('https://agent.techmadeeasy.info/compare');
-    expect(inputs.newUserCallbackURL).toBe('https://agent.techmadeeasy.info/auth/signin?google_signup=1');
-    expect(inputs.errorCallbackURL).toBe('https://agent.techmadeeasy.info/auth/signin?authError=google');
+    const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(callBody.provider).toBe('google');
+    expect(callBody.callbackURL).toBe('https://agent.techmadeeasy.info/compare');
+    expect(callBody.newUserCallbackURL).toContain('/auth/signin?google_signup=1');
+    expect(callBody.errorCallbackURL).toContain('/auth/signin?authError=google');
   });
 
   it('tracks Google signup once and redirects when callback marker is present', async () => {

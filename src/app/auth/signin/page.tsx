@@ -15,17 +15,19 @@ function SignInPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  const returnTo = searchParams.get('returnTo') || '/compare';
+
   useEffect(() => {
     if (searchParams.get('google_signup') === '1') {
       trackOnce('signup_completed', { method: 'google' });
-      router.replace('/compare');
+      router.replace(returnTo);
       return;
     }
 
     if (searchParams.get('authError') === 'google') {
       setError('Google sign-in failed. Please try again.');
     }
-  }, [router, searchParams, trackOnce]);
+  }, [router, searchParams, trackOnce, returnTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +58,7 @@ function SignInPageContent() {
         trackOnce('signup_completed', { method: 'email' });
       }
 
-      router.push('/compare');
+      router.push(returnTo);
     } catch {
       setError('Network error. Please try again.');
     } finally {
@@ -79,9 +81,9 @@ function SignInPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           provider: 'google',
-          callbackURL: `${window.location.origin}/compare`,
-          newUserCallbackURL: `${window.location.origin}/auth/signin?google_signup=1`,
-          errorCallbackURL: `${window.location.origin}/auth/signin?authError=google`,
+          callbackURL: `${window.location.origin}${returnTo}`,
+          newUserCallbackURL: `${window.location.origin}/auth/signin?google_signup=1&returnTo=${encodeURIComponent(returnTo)}`,
+          errorCallbackURL: `${window.location.origin}/auth/signin?authError=google&returnTo=${encodeURIComponent(returnTo)}`,
         }),
       });
 

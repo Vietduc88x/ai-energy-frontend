@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { Suspense, useRef, useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useSession } from '@/hooks/use-session';
 import { ProtectedRoute } from '@/components/protected-route';
 import { streamChat, type ChatMessage, type ChatMeta } from '@/lib/api-client';
@@ -13,25 +14,55 @@ interface Message {
   loading?: boolean;
 }
 
-const SAMPLE_QUESTIONS = [
-  { emoji: '☀️', text: 'What is the LCOE of solar PV in 2024?' },
-  { emoji: '🌊', text: 'How much does offshore wind cost in Europe?' },
-  { emoji: '⚡', text: 'Compare solar vs wind costs globally' },
-  { emoji: '🔋', text: 'Battery storage cost trends' },
-  { emoji: '⚛️', text: 'Nuclear vs solar LCOE comparison' },
-  { emoji: '🏜️', text: 'Solar auction prices in the Middle East' },
-  { emoji: '🟢', text: 'Green hydrogen production cost' },
-  { emoji: '💨', text: 'Capacity factor of onshore wind?' },
+const SAMPLE_SECTIONS = [
+  {
+    label: 'Cost Benchmarks',
+    color: 'emerald' as const,
+    questions: [
+      { text: 'What is the LCOE of solar PV in 2024?' },
+      { text: 'Compare CAPEX for onshore vs offshore wind' },
+      { text: 'Battery storage cost trends 2020-2024' },
+      { text: 'Green hydrogen production cost by region' },
+    ],
+  },
+  {
+    label: 'Policy & Regulation',
+    color: 'blue' as const,
+    questions: [
+      { text: 'Current solar incentives in India' },
+      { text: 'EU renewable energy targets for 2030' },
+      { text: 'Permitting timeline for wind in Australia' },
+      { text: 'US IRA tax credits for clean energy' },
+    ],
+  },
+  {
+    label: 'Project Guidelines',
+    color: 'amber' as const,
+    questions: [
+      { text: 'TDD checklist for solar PV feasibility' },
+      { text: 'EPC contract review questions' },
+      { text: 'Risk register for hybrid PV + BESS' },
+      { text: 'Document request list for procurement' },
+    ],
+  },
 ];
 
-export default function ComparePage() {
+const SECTION_COLORS = {
+  emerald: { label: 'text-emerald-600', dot: 'bg-emerald-400', hover: 'hover:border-emerald-300 hover:bg-emerald-50/60' },
+  blue: { label: 'text-blue-600', dot: 'bg-blue-400', hover: 'hover:border-blue-300 hover:bg-blue-50/60' },
+  amber: { label: 'text-amber-600', dot: 'bg-amber-400', hover: 'hover:border-amber-300 hover:bg-amber-50/60' },
+};
+
+function ComparePageContent() {
   const session = useSession();
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
+  const prefillConsumed = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -115,6 +146,19 @@ export default function ComparePage() {
     setMessages([]);
   };
 
+  // Auto-send prefilled query from ?q= search param (e.g. from landing page example queries)
+  useEffect(() => {
+    if (prefillConsumed.current) return;
+    if (session.loading || !session.user) return;
+    const q = searchParams.get('q');
+    if (q && q.trim()) {
+      prefillConsumed.current = true;
+      // Clear the ?q= param from URL without navigation
+      window.history.replaceState({}, '', '/compare');
+      sendMessage(q.trim());
+    }
+  }, [session.loading, session.user, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <ProtectedRoute session={session}>
       <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)]">
@@ -122,28 +166,40 @@ export default function ComparePage() {
         <div className="flex-1 overflow-y-auto">
           {messages.length === 0 ? (
             /* ── Welcome screen ── */
-            <div className="flex flex-col items-center justify-center h-full text-center px-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center mb-5 shadow-lg">
-                <svg className="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <div className="flex flex-col items-center justify-center h-full px-4 py-6">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center mb-4 shadow-lg">
+                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">AI Energy Analyst</h1>
-              <p className="text-gray-500 mb-8 max-w-md text-sm">
-                Ask me anything about energy costs, technologies, and markets.
-                Powered by data from IRENA, Lazard, BNEF, EIA, NREL &amp; IFC.
+              <h1 className="text-2xl font-bold text-gray-900 mb-1 text-center">AI Energy Analyst</h1>
+              <p className="text-gray-500 mb-6 max-w-md text-sm text-center">
+                Compare costs, track policies, and generate project checklists
+                — powered by IRENA, Lazard, BNEF, EIA, NREL &amp; IFC.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-w-xl w-full">
-                {SAMPLE_QUESTIONS.map((q) => (
-                  <button
-                    key={q.text}
-                    onClick={() => sendMessage(q.text)}
-                    className="group text-left text-sm px-4 py-3.5 rounded-xl border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/60 text-gray-700 transition-all duration-150 hover:shadow-sm"
-                  >
-                    <span className="mr-2">{q.emoji}</span>
-                    {q.text}
-                  </button>
-                ))}
+              <div className="max-w-2xl w-full space-y-5">
+                {SAMPLE_SECTIONS.map((section) => {
+                  const sc = SECTION_COLORS[section.color];
+                  return (
+                    <div key={section.label}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                        <span className={`text-[11px] font-semibold uppercase tracking-wider ${sc.label}`}>{section.label}</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {section.questions.map((q) => (
+                          <button
+                            key={q.text}
+                            onClick={() => sendMessage(q.text)}
+                            className={`group text-left text-sm px-4 py-3 rounded-xl border border-gray-200 text-gray-700 transition-all duration-150 hover:shadow-sm ${sc.hover}`}
+                          >
+                            {q.text}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : (
@@ -261,6 +317,18 @@ export default function ComparePage() {
         </div>
       </div>
     </ProtectedRoute>
+  );
+}
+
+export default function ComparePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[60dvh]">
+        <div className="skeleton w-64 h-8" />
+      </div>
+    }>
+      <ComparePageContent />
+    </Suspense>
   );
 }
 

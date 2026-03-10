@@ -7,6 +7,7 @@ const mockReplace = vi.fn();
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
   usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 // ─── Mock fetch ─────────────────────────────────────────────────────────────
@@ -55,7 +56,7 @@ describe('ProtectedRoute', () => {
     render(<TestPage />);
 
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/auth/signin');
+      expect(mockReplace).toHaveBeenCalledWith(expect.stringContaining('/auth/signin'));
     });
   });
 });
@@ -86,7 +87,7 @@ describe('Landing page demo', () => {
     const LandingPage = (await import('@/app/page')).default;
     render(<LandingPage />);
 
-    const btn = screen.getByText(/Try demo/i);
+    const btn = screen.getByText(/Try it/i);
     fireEvent.click(btn);
 
     await waitFor(() => {
