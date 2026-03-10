@@ -196,57 +196,66 @@ export default function ComparePage() {
         </div>
 
         {/* ── Input area ── */}
-        <div className="border-t bg-white/80 backdrop-blur-sm px-4 py-3">
+        <div className="bg-gradient-to-t from-white via-white to-white/80 px-4 pt-3 pb-4">
           <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
-            <div className="flex items-end gap-2">
+            <div className="flex items-end gap-2.5">
               {messages.length > 0 && (
                 <button
                   type="button"
                   onClick={clearChat}
                   title="New chat"
-                  className="flex-shrink-0 w-10 h-10 rounded-xl border border-gray-200 hover:bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors mb-0.5"
+                  className="flex-shrink-0 w-11 h-11 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
               )}
               <div className="flex-1 relative">
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Ask about energy costs, technologies, markets..."
-                  rows={1}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent resize-none leading-relaxed"
-                  disabled={streaming}
-                  autoFocus
-                />
-                <button
-                  type="submit"
-                  disabled={streaming || !input.trim()}
-                  className={`absolute right-2 bottom-2 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                    streaming || !input.trim()
-                      ? 'text-gray-300 cursor-not-allowed'
-                      : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm'
-                  }`}
-                >
-                  {streaming ? (
-                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                <div className="flex items-end rounded-2xl border border-gray-200 bg-white shadow-sm focus-within:shadow-md focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-400 transition-all">
+                  <div className="pl-4 pb-3 pt-3 flex items-center">
+                    <svg className="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
-                  ) : (
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </button>
+                  </div>
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ask about energy costs, technologies, markets..."
+                    rows={1}
+                    className="flex-1 px-3 py-3 pr-2 text-sm bg-transparent focus:outline-none resize-none leading-relaxed placeholder:text-gray-400"
+                    disabled={streaming}
+                    autoFocus
+                  />
+                  <div className="pr-2 pb-2 flex items-end">
+                    <button
+                      type="submit"
+                      disabled={streaming || !input.trim()}
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                        streaming || !input.trim()
+                          ? 'text-gray-300 cursor-not-allowed'
+                          : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm hover:shadow'
+                      }`}
+                    >
+                      {streaming ? (
+                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-            <p className="text-[11px] text-gray-400 text-center mt-2">
-              Shift + Enter for new line &middot; Data may not reflect the latest market conditions
+            <p className="text-[11px] text-gray-400 text-center mt-2.5">
+              Press Enter to send &middot; Shift+Enter for new line
             </p>
           </form>
         </div>
