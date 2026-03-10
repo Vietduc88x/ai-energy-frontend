@@ -25,7 +25,7 @@ export function TopNav({ session }: NavProps) {
         Energy Analyst
       </Link>
       <nav className="flex items-center gap-6 text-sm">
-        <NavLink href="/compare">Compare</NavLink>
+        <NavLink href="/compare">Chat</NavLink>
         <NavLink href="/dashboard">Dashboard</NavLink>
         <NavLink href="/billing">Billing</NavLink>
         {user?.role === 'admin' && <NavLink href="/admin">Admin</NavLink>}
@@ -59,7 +59,7 @@ export function BottomTabs({ session }: NavProps) {
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t z-40 pb-safe flex justify-around">
       <Tab href="/" label="Home" icon="H" />
-      <Tab href="/compare" label="Compare" icon="C" />
+      <Tab href="/compare" label="Chat" icon="C" />
       <Tab href="/dashboard" label="Dashboard" icon="D" />
       <Tab href="/billing" label="Billing" icon="B" />
     </nav>
