@@ -64,8 +64,12 @@ function SignInPageContent() {
     setGoogleLoading(true);
     setError(null);
 
+    // OAuth must go directly to the backend (not via Next.js proxy)
+    // so the state cookie is set on the same domain as the callback.
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
+
     try {
-      const res = await fetch('/api/auth/sign-in/social', {
+      const res = await fetch(`${apiBase}/api/auth/sign-in/social`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
