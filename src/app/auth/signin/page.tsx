@@ -4,6 +4,12 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAnalytics } from '@/hooks/use-analytics';
 
+function isInAppBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return /FBAN|FBAV|Instagram|LinkedIn|Line\/|Twitter|Snapchat|MicroMessenger|WeChat/i.test(ua);
+}
+
 function SignInPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -14,6 +20,7 @@ function SignInPageContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [inApp] = useState(isInAppBrowser);
 
   const returnTo = searchParams.get('returnTo') || '/compare';
 
@@ -108,14 +115,26 @@ function SignInPageContent() {
         {mode === 'signin' ? 'Sign in' : 'Create account'}
       </h1>
 
-      <button
-        type="button"
-        onClick={handleGoogleSignIn}
-        disabled={googleLoading || loading}
-        className="w-full py-3 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-900 font-medium text-sm touch-target disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
-      >
-        {googleLoading ? 'Redirecting to Google...' : 'Continue with Google'}
-      </button>
+      {inApp ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+          <p className="text-sm text-amber-800 font-medium">
+            Google sign-in is blocked in this browser
+          </p>
+          <p className="text-xs text-amber-700 leading-relaxed">
+            You&apos;re viewing this inside an app. Google requires a full browser for sign-in.
+            Tap the menu (⋮ or ⋯) and choose &quot;Open in browser&quot;, or use email below.
+          </p>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={googleLoading || loading}
+          className="w-full py-3 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-900 font-medium text-sm touch-target disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+        >
+          {googleLoading ? 'Redirecting to Google...' : 'Continue with Google'}
+        </button>
+      )}
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center" aria-hidden="true">
