@@ -38,7 +38,11 @@ function SignInPageContent() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email,
+          password,
+          ...(mode === 'signup' ? { name: email.split('@')[0] } : {}),
+        }),
       });
 
       if (!res.ok) {
