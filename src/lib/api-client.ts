@@ -213,3 +213,97 @@ export function getAdminFunnel(days: number = 30) {
 export function getUserProfile() {
   return apiFetch<UserProfile>('/api/v1/user/me');
 }
+
+// ─── Chat API (SSE streaming) ────────────────────────────────────────────────
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ChatMeta {
+  factsUsed: number;
+  technologies: string[];
+  regions: string[];
+  metrics: string[];
+}
+
+/**
+ * Send a chat message and receive a streaming SSE response.
+ * Returns an object with callbacks for tokens, meta, done, and error events.
+ */
+export function streamChat(
+  message: string,
+  history: ChatMessage[],
+  callbacks: {
+    onMeta?: (meta: ChatMeta) => void;
+    onToken?: (token: string) => void;
+    onDone?: (latencyMs: number) => void;
+    onError?: (message: string) => void;
+  },
+): AbortController {
+  const controller = new AbortController();
+
+  fetch('/api/v1/chat', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, history }),
+    signal: controller.signal,
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        callbacks.onError?.(body.error || `Request failed (${res.status})`);
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) {
+        callbacks.onError?.('No response stream');
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const data = JSON.parse(line.slice(6));
+            switch (data.type) {
+              case 'meta':
+                callbacks.onMeta?.(data);
+                break;
+              case 'token':
+                callbacks.onToken?.(data.token);
+                break;
+              case 'done':
+                callbacks.onDone?.(data.latencyMs);
+                break;
+              case 'error':
+                callbacks.onError?.(data.message);
+                break;
+            }
+          } catch {
+            // skip malformed SSE
+          }
+        }
+      }
+    })
+    .catch((err) => {
+      if (err.name !== 'AbortError') {
+        callbacks.onError?.(err.message || 'Network error');
+      }
+    });
+
+  return controller;
+}
