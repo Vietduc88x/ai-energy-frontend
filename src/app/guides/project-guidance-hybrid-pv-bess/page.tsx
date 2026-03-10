@@ -5,9 +5,26 @@ import { AssetCta } from '@/components/assets/AssetCta';
 import { CitationList } from '@/components/assets/CitationList';
 import { ChecklistGroup } from '@/components/assets/ChecklistGroup';
 
+const TITLE = 'Project Guidance for Hybrid PV + BESS';
+const DESCRIPTION = 'Structured project guidance for hybrid solar PV and battery storage projects: technical due diligence, EPC review, contract management, risk register, and document requests.';
+const URL = 'https://agent.techmadeeasy.info/guides/project-guidance-hybrid-pv-bess';
+
 export const metadata: Metadata = {
-  title: 'Project Guidance for Hybrid PV + BESS | AI Energy Analyst',
-  description: 'Structured project guidance for hybrid solar PV and battery storage projects: technical due diligence, EPC review, contract management, risk register, and document requests.',
+  title: `${TITLE} | AI Energy Analyst`,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: URL,
+    siteName: 'AI Energy Analyst',
+    type: 'article',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary',
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 const TDD_ITEMS = [

@@ -5,9 +5,26 @@ import { AssetCta } from '@/components/assets/AssetCta';
 import { CitationList } from '@/components/assets/CitationList';
 import { PolicyTimeline } from '@/components/assets/PolicyTimeline';
 
+const TITLE = 'Vietnam Solar Policy Snapshot';
+const DESCRIPTION = 'Current solar energy policy in Vietnam: FiT successor mechanism, rooftop rules, grid access, and recent regulatory changes for developers and investors.';
+const URL = 'https://agent.techmadeeasy.info/policy/vietnam-solar-snapshot';
+
 export const metadata: Metadata = {
-  title: 'Vietnam Solar Policy Snapshot | AI Energy Analyst',
-  description: 'Current solar energy policy in Vietnam: FiT successor mechanism, rooftop rules, grid access, and recent regulatory changes for developers and investors.',
+  title: `${TITLE} | AI Energy Analyst`,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: URL,
+    siteName: 'AI Energy Analyst',
+    type: 'article',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary',
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 const STATUS_ITEMS = [

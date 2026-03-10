@@ -4,9 +4,26 @@ import { AssetSection } from '@/components/assets/AssetSection';
 import { AssetCta } from '@/components/assets/AssetCta';
 import { CitationList } from '@/components/assets/CitationList';
 
+const TITLE = 'Solar LCOE 2024: 5-Source Benchmark Comparison';
+const DESCRIPTION = 'Compare solar PV levelized cost of energy across IRENA, Lazard, BNEF, EIA, and NREL for 2024. Understand why the numbers disagree and what drives the differences.';
+const URL = 'https://agent.techmadeeasy.info/insights/solar-lcoe-2024-irena-vs-lazard-vs-bnef';
+
 export const metadata: Metadata = {
-  title: 'Solar LCOE 2024: 5-Source Benchmark Comparison | AI Energy Analyst',
-  description: 'Compare solar PV levelized cost of energy across IRENA, Lazard, BNEF, EIA, and NREL for 2024. Understand why the numbers disagree and what drives the differences.',
+  title: `${TITLE} | AI Energy Analyst`,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: URL,
+    siteName: 'AI Energy Analyst',
+    type: 'article',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary',
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 const COMPARISON_ROWS = [
