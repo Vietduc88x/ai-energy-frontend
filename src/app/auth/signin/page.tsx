@@ -60,36 +60,36 @@ function SignInPageContent() {
     }
   };
 
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     setError(null);
 
-    const callbackURL = `${window.location.origin}/compare`;
-    const newUserCallbackURL = `${window.location.origin}/auth/signin?google_signup=1`;
-    const errorCallbackURL = `${window.location.origin}/auth/signin?authError=google`;
-    const form = document.createElement('form');
+    try {
+      const res = await fetch('/api/auth/sign-in/social', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'google',
+          callbackURL: `${window.location.origin}/compare`,
+          newUserCallbackURL: `${window.location.origin}/auth/signin?google_signup=1`,
+          errorCallbackURL: `${window.location.origin}/auth/signin?authError=google`,
+        }),
+      });
 
-    form.method = 'POST';
-    form.action = '/api/auth/sign-in/social';
-    form.style.display = 'none';
+      const data = await res.json().catch(() => ({}));
 
-    const fields = {
-      provider: 'google',
-      callbackURL,
-      newUserCallbackURL,
-      errorCallbackURL,
-    };
-
-    for (const [name, value] of Object.entries(fields)) {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = name;
-      input.value = value;
-      form.appendChild(input);
+      if (data.url) {
+        // Better Auth returns a redirect URL to Google's OAuth page
+        window.location.href = data.url;
+      } else {
+        setError('Failed to start Google sign-in');
+        setGoogleLoading(false);
+      }
+    } catch {
+      setError('Network error. Please try again.');
+      setGoogleLoading(false);
     }
-
-    document.body.appendChild(form);
-    form.submit();
   };
 
   return (
