@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from '@/hooks/use-session';
 import { streamChat, type ChatMessage, type ChatMeta } from '@/lib/api-client';
+import { PolicyAnswer } from '@/components/PolicyAnswer';
 
 interface Message {
   id: string;
@@ -430,7 +431,17 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
 
   return (
     <div>
+      {/* Structured policy briefing card — shown above narrative when available */}
+      {meta?.policyAnswer && (
+        <div className="mb-3">
+          <PolicyAnswer data={meta.policyAnswer} />
+        </div>
+      )}
+
+      {/* Narrative content from LLM */}
       <div className="space-y-0.5">{renderContent(content)}</div>
+
+      {/* Footer: data points used */}
       {meta && meta.factsUsed > 0 && (
         <div className="mt-3 pt-2 border-t border-gray-200 flex items-center gap-1.5 text-xs text-gray-400">
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">

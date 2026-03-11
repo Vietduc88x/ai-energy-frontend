@@ -221,11 +221,29 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface PolicyAnswerEnvelope {
+  topic: string;
+  jurisdiction: string;
+  technology?: string | null;
+  lastChecked: string;
+  confidence: 'high' | 'medium' | 'low';
+  currentStatus: { summary: string; statusLabels: string[] };
+  whatChanged: Array<{ title: string; detail: string; effectiveDate?: string | null }>;
+  howItWorksNow: Array<{ pathway: string; description: string; appliesTo?: string[] | null }>;
+  keyDates: Array<{ label: string; date: string; significance: string }>;
+  whoIsAffected: Array<{ actor: string; impact: string }>;
+  practicalImplications: string[];
+  whatToCheckNext: string[];
+  sources: Array<{ id?: string | null; source: string; title: string; date?: string | null; url?: string | null }>;
+  caveat?: string | null;
+}
+
 export interface ChatMeta {
   factsUsed: number;
   technologies: string[];
   regions: string[];
   metrics: string[];
+  policyAnswer?: PolicyAnswerEnvelope;
 }
 
 /**
