@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     locale: 'en_US',
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: TITLE,
     description: DESCRIPTION,
   },
@@ -91,6 +91,7 @@ export default function ProjectGuidancePage() {
         tagColor="amber"
         title="Project Guidance for Hybrid PV + BESS"
         subtitle="Structured guidance for reviewing, procuring, and delivering hybrid solar PV and battery storage projects — from feasibility through construction."
+        shareUrl={URL}
       />
 
       {/* Intro context */}

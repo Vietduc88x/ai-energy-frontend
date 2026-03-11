@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     locale: 'en_US',
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: TITLE,
     description: DESCRIPTION,
   },
@@ -73,6 +73,7 @@ export default function SolarLcoeBenchmarkPage() {
         tagColor="emerald"
         title="Solar LCOE 2024: IRENA vs Lazard vs BNEF"
         subtitle="Five major sources report solar PV costs — and none of them agree. Here's what each says, and why the numbers diverge."
+        shareUrl={URL}
       />
 
       {/* Key takeaway */}

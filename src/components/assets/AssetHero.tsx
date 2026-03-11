@@ -1,9 +1,12 @@
+import { ShareBar } from './ShareBar';
+
 interface Props {
   tag: string;
   tagColor?: 'emerald' | 'blue' | 'amber';
   title: string;
   subtitle: string;
   badge?: string;
+  shareUrl?: string;
 }
 
 const TAG_STYLES = {
@@ -12,7 +15,7 @@ const TAG_STYLES = {
   amber: 'bg-amber-50 border-amber-200 text-amber-700',
 };
 
-export function AssetHero({ tag, tagColor = 'emerald', title, subtitle, badge }: Props) {
+export function AssetHero({ tag, tagColor = 'emerald', title, subtitle, badge, shareUrl }: Props) {
   return (
     <section className="pt-10 md:pt-16 pb-8 text-center max-w-3xl mx-auto space-y-4">
       <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full border ${TAG_STYLES[tagColor]}`}>
@@ -26,6 +29,11 @@ export function AssetHero({ tag, tagColor = 'emerald', title, subtitle, badge }:
       </p>
       {badge && (
         <p className="text-xs text-gray-400 italic">{badge}</p>
+      )}
+      {shareUrl && (
+        <div className="flex justify-center pt-1">
+          <ShareBar url={shareUrl} title={title} />
+        </div>
       )}
     </section>
   );

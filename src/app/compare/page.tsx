@@ -2,8 +2,8 @@
 
 import { Suspense, useRef, useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useSession } from '@/hooks/use-session';
-import { ProtectedRoute } from '@/components/protected-route';
 import { streamChat, type ChatMessage, type ChatMeta } from '@/lib/api-client';
 
 interface Message {
@@ -63,6 +63,7 @@ function ComparePageContent() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const prefillConsumed = useRef(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -88,6 +89,14 @@ function ComparePageContent() {
     const trimmed = text.trim();
     if (!trimmed || streaming) return;
 
+    // Gate: require auth before sending
+    if (!session.user) {
+      setInput(trimmed);
+      setShowAuthPrompt(true);
+      return;
+    }
+
+    setShowAuthPrompt(false);
     const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: trimmed };
     const assistantMsg: Message = { id: crypto.randomUUID(), role: 'assistant', content: '', loading: true };
 
@@ -149,18 +158,22 @@ function ComparePageContent() {
   // Auto-send prefilled query from ?q= search param (e.g. from landing page example queries)
   useEffect(() => {
     if (prefillConsumed.current) return;
-    if (session.loading || !session.user) return;
+    if (session.loading) return;
     const q = searchParams.get('q');
     if (q && q.trim()) {
       prefillConsumed.current = true;
-      // Clear the ?q= param from URL without navigation
       window.history.replaceState({}, '', '/compare');
-      sendMessage(q.trim());
+      if (session.user) {
+        sendMessage(q.trim());
+      } else {
+        // Prefill input and show auth prompt for unauth users
+        setInput(q.trim());
+        setShowAuthPrompt(true);
+      }
     }
   }, [session.loading, session.user, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <ProtectedRoute session={session}>
       <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)]">
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto">
@@ -314,9 +327,32 @@ function ComparePageContent() {
               Press Enter to send &middot; Shift+Enter for new line
             </p>
           </form>
+
+          {/* Auth prompt — shown when unauth user tries to send */}
+          {showAuthPrompt && (
+            <div className="max-w-3xl mx-auto mt-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-emerald-800">Sign in to ask your question</p>
+                <p className="text-xs text-emerald-600 mt-0.5">Free account — no credit card required. Your question will be sent automatically after sign-in.</p>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                <Link
+                  href={`/auth/signin?returnTo=${encodeURIComponent(`/compare?q=${encodeURIComponent(input)}`)}`}
+                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
+                >
+                  Sign in
+                </Link>
+                <button
+                  onClick={() => setShowAuthPrompt(false)}
+                  className="px-3 py-2 rounded-lg text-emerald-600 hover:bg-emerald-100 text-sm font-medium transition-colors"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </ProtectedRoute>
   );
 }
 

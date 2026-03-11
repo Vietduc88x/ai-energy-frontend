@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     locale: 'en_US',
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: TITLE,
     description: DESCRIPTION,
   },
@@ -113,6 +113,7 @@ export default function VietnamSolarPolicyPage() {
         title="Vietnam Solar Policy Snapshot"
         subtitle="The regulatory landscape for solar energy in Vietnam as of early 2025 — current mechanisms, recent changes, and what's next for developers and investors."
         badge="Last updated: March 2025"
+        shareUrl={URL}
       />
 
       {/* Current status */}

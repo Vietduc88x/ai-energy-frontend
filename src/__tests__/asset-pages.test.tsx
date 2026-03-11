@@ -166,6 +166,98 @@ describe('Project Guidance asset page', () => {
   });
 });
 
+// ─── Wind LCOE asset page ───────────────────────────────────────────────────
+
+describe('Wind LCOE asset page', () => {
+  it('renders headline and key takeaway', async () => {
+    const Page = (await import('@/app/insights/wind-lcoe-2024-onshore-vs-offshore/page')).default;
+    render(<Page />);
+
+    expect(screen.getByText('Wind LCOE 2024: Onshore vs Offshore')).toBeInTheDocument();
+    expect(screen.getByText(/Key takeaway/i)).toBeInTheDocument();
+  });
+
+  it('renders both onshore and offshore tables', async () => {
+    const Page = (await import('@/app/insights/wind-lcoe-2024-onshore-vs-offshore/page')).default;
+    render(<Page />);
+
+    expect(screen.getByText('Onshore wind')).toBeInTheDocument();
+    expect(screen.getByText('Offshore wind')).toBeInTheDocument();
+  });
+
+  it('has correct CTA link', async () => {
+    const Page = (await import('@/app/insights/wind-lcoe-2024-onshore-vs-offshore/page')).default;
+    render(<Page />);
+
+    const cta = screen.getByText('Compare wind costs for your market');
+    expect(cta.closest('a')?.getAttribute('href')).toContain('/compare?q=');
+  });
+});
+
+// ─── Philippines policy asset page ──────────────────────────────────────────
+
+describe('Philippines policy asset page', () => {
+  it('renders headline and current status', async () => {
+    const Page = (await import('@/app/policy/philippines-solar-snapshot/page')).default;
+    render(<Page />);
+
+    expect(screen.getByText('Philippines Solar Policy Snapshot')).toBeInTheDocument();
+    expect(screen.getByText('Current status')).toBeInTheDocument();
+  });
+
+  it('renders timeline and who is affected', async () => {
+    const Page = (await import('@/app/policy/philippines-solar-snapshot/page')).default;
+    render(<Page />);
+
+    expect(screen.getByText('Recent changes')).toBeInTheDocument();
+    expect(screen.getByText('Who is affected')).toBeInTheDocument();
+    expect(screen.getByText('Utility-scale developers')).toBeInTheDocument();
+  });
+
+  it('has correct CTA link', async () => {
+    const Page = (await import('@/app/policy/philippines-solar-snapshot/page')).default;
+    render(<Page />);
+
+    const cta = screen.getByText('Track Philippines energy policy');
+    expect(cta.closest('a')?.getAttribute('href')).toContain('/compare?q=');
+  });
+});
+
+// ─── Battery storage cost trends page ───────────────────────────────────────
+
+describe('Battery storage cost trends page', () => {
+  it('renders headline and key takeaway', async () => {
+    const Page = (await import('@/app/insights/battery-storage-cost-trends-2020-2024/page')).default;
+    render(<Page />);
+
+    expect(screen.getByText('Battery Storage Cost Trends: 2020-2024')).toBeInTheDocument();
+    expect(screen.getByText(/Key takeaway/i)).toBeInTheDocument();
+  });
+
+  it('renders pack price trend', async () => {
+    const Page = (await import('@/app/insights/battery-storage-cost-trends-2020-2024/page')).default;
+    render(<Page />);
+
+    expect(screen.getByText('$115')).toBeInTheDocument();
+    expect(screen.getByText('$151')).toBeInTheDocument();
+  });
+
+  it('renders system cost comparison table', async () => {
+    const Page = (await import('@/app/insights/battery-storage-cost-trends-2020-2024/page')).default;
+    render(<Page />);
+
+    expect(screen.getByText('Grid-scale system costs (2024)')).toBeInTheDocument();
+  });
+
+  it('has correct CTA link', async () => {
+    const Page = (await import('@/app/insights/battery-storage-cost-trends-2020-2024/page')).default;
+    render(<Page />);
+
+    const cta = screen.getByText('Analyze storage costs for your project');
+    expect(cta.closest('a')?.getAttribute('href')).toContain('/compare?q=');
+  });
+});
+
 // ─── Shared components ──────────────────────────────────────────────────────
 
 describe('Asset shared components', () => {
