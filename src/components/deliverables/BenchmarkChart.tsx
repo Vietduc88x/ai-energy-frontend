@@ -1,5 +1,7 @@
 'use client';
 
+import { FamilyBadge } from './DeliverableBadge';
+
 export interface BenchmarkChartSpec {
   type: 'benchmark_chart';
   chartType: 'bar' | 'range' | 'line';
@@ -57,7 +59,10 @@ export function BenchmarkChart({ spec }: { spec: BenchmarkChartSpec }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-100">
-        <h3 className="text-sm font-bold text-gray-900">{spec.title}</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-bold text-gray-900">{spec.title}</h3>
+          <FamilyBadge family="figure" />
+        </div>
         {spec.subtitle && <p className="text-xs text-gray-500 mt-0.5">{spec.subtitle}</p>}
       </div>
 

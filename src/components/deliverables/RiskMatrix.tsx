@@ -1,5 +1,7 @@
 'use client';
 
+import { FamilyBadge } from './DeliverableBadge';
+
 export interface RiskMatrixSpec {
   type: 'risk_matrix';
   title: string;
@@ -34,6 +36,7 @@ export function RiskMatrix({ spec }: { spec: RiskMatrixSpec }) {
       <div className="px-4 py-3 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-bold text-gray-900">{spec.title}</h3>
+          <FamilyBadge family="matrix" />
           <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-200">Starter</span>
         </div>
         {spec.subtitle && <p className="text-xs text-gray-500 mt-0.5">{spec.subtitle}</p>}

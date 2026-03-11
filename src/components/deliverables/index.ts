@@ -10,3 +10,4 @@ export { RiskMatrix } from './RiskMatrix';
 export type { RiskMatrixSpec } from './RiskMatrix';
 export { ProjectTimeline } from './ProjectTimeline';
 export type { ProjectTimelineSpec } from './ProjectTimeline';
+export { FamilyBadge, ConfidenceBadge, DeliverableMetaLine } from './DeliverableBadge';
