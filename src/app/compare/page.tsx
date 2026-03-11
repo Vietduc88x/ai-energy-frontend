@@ -4,7 +4,7 @@ import { Suspense, useRef, useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from '@/hooks/use-session';
-import { streamChat, saveExportReport, createEditableDocument, type ChatMessage, type ChatMeta, type ChatQuotaError, type DocumentType } from '@/lib/api-client';
+import { streamChat, saveExportReport, createEditableDocument, exportDocument as exportDocumentUrl, type ChatMessage, type ChatMeta, type ChatQuotaError, type DocumentType } from '@/lib/api-client';
 import { PolicyAnswer } from '@/components/PolicyAnswer';
 import { ProjectGuidanceCard } from '@/components/ProjectGuidancePack';
 import { QuotaModal } from '@/components/quota-modal';
@@ -391,9 +391,31 @@ export default function ComparePage() {
   );
 }
 
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+/** Truncate text to roughly `n` sentences, preserving whole sentences. */
+function truncateToSentences(text: string, n: number): string {
+  // Match sentence-ending punctuation followed by whitespace or end-of-string
+  const re = /[.!?](?:\s|$)/g;
+  let count = 0;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    count++;
+    if (count >= n) {
+      return text.slice(0, match.index + 1);
+    }
+  }
+  // Fewer than n sentences — return full text
+  return text;
+}
+
 // ─── Markdown-lite renderer for assistant messages ──────────────────────────
 
 function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta }) {
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [xlsxLoading, setXlsxLoading] = useState(false);
+
   const renderContent = (text: string) => {
     const lines = text.split('\n');
     const elements: React.ReactNode[] = [];
@@ -476,31 +498,62 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
     const sourceObjectTypeMap = { policy: 'policy_brief', guidance: 'project_guidance_pack', benchmark: 'benchmark_brief' };
     const reportTypeMap = { policy: 'policy_report', guidance: 'project_guidance_report', benchmark: 'benchmark_report' };
 
-    // Save to backend for durable URL
-    const { data: saved, error } = await saveExportReport({
-      reportType: reportTypeMap[type],
-      sourceObjectType: sourceObjectTypeMap[type],
-      title: (reportData.topic ?? reportData.summary ?? type) as string,
-      report: reportData,
-    });
+    setReportLoading(true);
+    setReportError(null);
 
-    if (saved?.id) {
-      window.open(`/reports/${type}?id=${saved.id}`, '_blank');
-    } else {
-      // Fallback: inline data in URL
-      try {
-        const encoded = encodeURIComponent(JSON.stringify(data));
-        window.open(`/reports/${type}?data=${encoded}`, '_blank');
-      } catch {
-        const key = `report_${type}_${Date.now()}`;
-        sessionStorage.setItem(key, JSON.stringify(data));
-        window.open(`/reports/${type}?key=${key}`, '_blank');
+    try {
+      const { data: saved, error } = await saveExportReport({
+        reportType: reportTypeMap[type],
+        sourceObjectType: sourceObjectTypeMap[type],
+        title: (reportData.topic ?? reportData.summary ?? type) as string,
+        report: reportData,
+      });
+
+      if (saved?.id) {
+        window.open(`/reports/${type}?id=${saved.id}`, '_blank');
+      } else {
+        setReportError(error?.message ?? 'Failed to save report');
       }
+    } catch (err: any) {
+      setReportError(err?.message ?? 'Failed to create report');
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const exportXlsx = async (data: unknown) => {
+    setXlsxLoading(true);
+    setReportError(null);
+    try {
+      const reportData = data as Record<string, unknown>;
+      const title = String(reportData.topic ?? reportData.summary ?? 'guidance').slice(0, 200);
+      const { data: created, error } = await createEditableDocument({
+        type: 'project_guidance_report',
+        title,
+        contentJson: { ...reportData, title },
+      });
+      if (created?.id) {
+        // Trigger XLSX download
+        const url = exportDocumentUrl(created.id, 'xlsx');
+        window.open(url, '_blank');
+      } else {
+        setReportError(error?.message ?? 'Failed to export');
+      }
+    } catch (err: any) {
+      setReportError(err?.message ?? 'Export failed');
+    } finally {
+      setXlsxLoading(false);
     }
   };
 
   const mode = meta?.deliverableMode ?? 'report'; // fallback to report (full) for old responses
   const showProductCards = mode === 'report' || mode === 'brief';
+  const isCompactMode = mode === 'checklist' || mode === 'table';
+
+  // In compact mode, truncate narrative to first ~3 sentences
+  const displayContent = isCompactMode && content.length > 0
+    ? truncateToSentences(content, 4)
+    : content;
 
   return (
     <div>
@@ -536,36 +589,96 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
         </div>
       )}
 
-      {/* Narrative content from LLM */}
-      <div className="space-y-0.5">{renderContent(content)}</div>
+      {/* Narrative content from LLM — truncated in compact modes */}
+      <div className="space-y-0.5">{renderContent(displayContent)}</div>
 
-      {/* Secondary actions — report export buttons */}
-      {(meta?.policyAnswer || meta?.guidancePack || meta?.hasPolicyData || meta?.hasGuidanceData) && (
+      {/* Error message for report/export actions */}
+      {reportError && (
+        <div className="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          {reportError}
+        </div>
+      )}
+
+      {/* Compact mode action bar — XLSX export + full report request */}
+      {isCompactMode && meta?.guidancePack && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            onClick={() => exportXlsx(meta.guidancePack)}
+            disabled={xlsxLoading}
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-600 hover:bg-emerald-50 transition-colors print:hidden disabled:opacity-60"
+          >
+            {xlsxLoading ? (
+              <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            ) : (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+            )}
+            Export XLSX
+          </button>
+          <button
+            onClick={() => openReport('guidance', meta.guidancePack)}
+            disabled={reportLoading}
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-teal-200 text-teal-600 hover:bg-teal-50 transition-colors print:hidden disabled:opacity-60"
+          >
+            {reportLoading ? (
+              <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            ) : (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            )}
+            Open Full Guidance Report
+          </button>
+        </div>
+      )}
+
+      {/* Full mode action bar — report export + edit buttons */}
+      {!isCompactMode && (meta?.policyAnswer || meta?.guidancePack || meta?.hasPolicyData || meta?.hasGuidanceData) && (
         <div className="mt-3 flex flex-wrap gap-2">
           {(meta?.policyAnswer || meta?.hasPolicyData) && (
             <button
               onClick={() => meta?.policyAnswer && openReport('policy', meta.policyAnswer)}
-              disabled={!meta?.policyAnswer}
+              disabled={!meta?.policyAnswer || reportLoading}
               className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors print:hidden disabled:opacity-50 disabled:cursor-not-allowed"
               title={!meta?.policyAnswer ? 'Ask for a "full report" to generate the exportable version' : undefined}
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              {showProductCards ? 'Open Policy Report' : 'Request Full Policy Report'}
+              {reportLoading ? (
+                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              )}
+              Open Policy Report
             </button>
           )}
-          {(meta?.guidancePack || meta?.hasGuidanceData) && (
+          {meta?.guidancePack && (
             <button
-              onClick={() => meta?.guidancePack && openReport('guidance', meta.guidancePack)}
-              disabled={!meta?.guidancePack}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-teal-200 text-teal-600 hover:bg-teal-50 transition-colors print:hidden disabled:opacity-50 disabled:cursor-not-allowed"
-              title={!meta?.guidancePack ? 'Ask for a "full report" to generate the exportable version' : undefined}
+              onClick={() => openReport('guidance', meta.guidancePack)}
+              disabled={reportLoading}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-teal-200 text-teal-600 hover:bg-teal-50 transition-colors print:hidden disabled:opacity-60"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              {showProductCards ? 'Open Guidance Report' : 'Request Full Guidance Report'}
+              {reportLoading ? (
+                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              )}
+              Open Guidance Report
             </button>
           )}
           {/* Edit buttons — create editable draft */}
