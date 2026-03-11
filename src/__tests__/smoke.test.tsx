@@ -87,7 +87,7 @@ describe('Landing page demo', () => {
     const LandingPage = (await import('@/app/page')).default;
     render(<LandingPage />);
 
-    const btn = screen.getByText(/Try it/i);
+    const btn = screen.getByText(/See live demo/i);
     fireEvent.click(btn);
 
     await waitFor(() => {

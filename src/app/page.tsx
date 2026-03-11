@@ -1,67 +1,118 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { getDemoComparison, type ComparisonResult } from '@/lib/api-client';
 import { ComparisonTable } from '@/components/comparison-table';
 import { CardSkeleton } from '@/components/skeleton';
 
-// ─── Data ────────────────────────────────────────────────────────────────────
+// ─── Sample chat conversations ──────────────────────────────────────────────
 
-const PILLARS = [
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  text: string;
+  table?: { headers: string[]; rows: string[][] };
+  badge?: string;
+  sources?: string[];
+}
+
+const SAMPLE_CHATS: { label: string; color: string; messages: ChatMessage[] }[] = [
   {
-    title: 'Cost Benchmarks',
-    subtitle: 'LCOE, CAPEX, OPEX, capacity factors, auction prices',
-    description: 'Compare energy costs across technologies, regions, and time periods. Normalized to a common currency and price year with full methodology transparency.',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-      </svg>
-    ),
-    queries: [
-      'What is the LCOE of solar PV in 2024?',
-      'Compare CAPEX for onshore wind vs offshore wind',
-      'Battery storage cost trends 2020-2024',
-      'Solar auction prices in the Middle East',
-    ],
-    sources: ['IRENA', 'Lazard', 'BNEF', 'EIA', 'NREL'],
+    label: 'Cost Benchmark',
     color: 'emerald',
+    messages: [
+      { role: 'user', text: 'What is the LCOE of solar PV in 2024?' },
+      {
+        role: 'assistant',
+        text: 'Solar PV utility-scale LCOE in 2024 ranges from $24 to $96/MWh depending on region and methodology. Here\'s the cross-source comparison:',
+        table: {
+          headers: ['Source', 'LCOE (USD/MWh)', 'Range', 'Methodology'],
+          rows: [
+            ['IRENA', '$36', '$28 - $50', 'Weighted average, global'],
+            ['Lazard', '$49', '$24 - $96', 'Unsubsidized, US-focused'],
+            ['BNEF', '$41', '$30 - $55', 'Global benchmark, H2 2024'],
+            ['EIA', '$33', '$29 - $42', 'US utility-scale, AEO 2024'],
+          ],
+        },
+        badge: 'benchmark_report',
+        sources: ['IRENA RPGC 2024', 'Lazard LCOE 16.0', 'BNEF 1H 2024', 'EIA AEO 2024'],
+      },
+    ],
   },
   {
-    title: 'Policy Tracker',
-    subtitle: 'Regulations, incentives, deadlines by jurisdiction',
-    description: 'Track energy policy changes across 15+ countries. Get alerts on regulatory shifts, permitting updates, and subsidy changes that affect your projects.',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
-      </svg>
-    ),
-    queries: [
-      'What are current solar incentives in India?',
-      'Recent policy changes for wind energy in EU',
-      'Permitting requirements for BESS in Australia',
-      'Compare renewable energy targets: US vs China',
-    ],
-    sources: ['DCCEEW', 'MNRE', 'EU Commission', 'DOE'],
+    label: 'Policy Tracker',
     color: 'blue',
+    messages: [
+      { role: 'user', text: 'What are the latest solar policy changes in Vietnam?' },
+      {
+        role: 'assistant',
+        text: 'Vietnam\'s solar regulatory landscape shifted significantly in 2024-2025. The key changes affect FIT rates, DPPA eligibility, and PDP8 capacity allocations.',
+        table: {
+          headers: ['Policy Change', 'Effective Date', 'Impact'],
+          rows: [
+            ['FIT rate reduced to 7.09 c/kWh', 'Jan 2025', 'Lower project returns for rooftop'],
+            ['DPPA framework finalized', 'Nov 2024', 'Enables corporate PPAs > 1 MW'],
+            ['PDP8 solar cap: 12.8 GW by 2030', 'May 2023', 'Limits new utility-scale capacity'],
+          ],
+        },
+        badge: 'policy_report',
+        sources: ['MOIT Decision 13/2023', 'DPPA Circular 2024', 'PDP8 Resolution'],
+      },
+    ],
   },
   {
-    title: 'Project Guidelines',
-    subtitle: 'Technical DD, EPC review, risk registers, checklists',
-    description: 'Generate structured checklists for technical due diligence, EPC contract review, risk assessment, and document requests — sourced from IFC, OPIC, and industry best practices.',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
-      </svg>
-    ),
-    queries: [
-      'TDD checklist for solar PV feasibility in India',
-      'EPC contract review questions for construction',
-      'Risk register for hybrid PV + BESS project',
-      'Document request list for procurement stage',
-    ],
-    sources: ['IFC', 'OPIC', 'World Bank', 'ADB'],
+    label: 'Project Guidance',
     color: 'amber',
+    messages: [
+      { role: 'user', text: 'TDD checklist for 50 MW solar PV feasibility in India' },
+      {
+        role: 'assistant',
+        text: 'Here\'s a structured technical due diligence checklist for a 50 MW solar PV feasibility study in India, based on IFC and World Bank guidelines:',
+        table: {
+          headers: ['Category', 'Item', 'Priority'],
+          rows: [
+            ['Site Assessment', 'Solar irradiance data (GHI > 4.5 kWh/m\u00B2/day)', 'Critical'],
+            ['Site Assessment', 'Geotechnical survey & soil analysis', 'Critical'],
+            ['Grid Connection', 'Substation proximity & evacuation capacity', 'Critical'],
+            ['Land', 'Land lease / acquisition agreement', 'Critical'],
+            ['Permits', 'State electricity board approval', 'High'],
+            ['Environmental', 'EIA clearance (if applicable)', 'High'],
+            ['Financial', 'PPA / SECI bid confirmation', 'Critical'],
+          ],
+        },
+        badge: 'project_guidance_report',
+        sources: ['IFC Solar Guide', 'MNRE Guidelines', 'World Bank RE Toolkit'],
+      },
+    ],
+  },
+];
+
+// ─── Pillar data ────────────────────────────────────────────────────────────
+
+const USE_CASES = [
+  {
+    persona: 'Investment Analyst',
+    problem: 'Spends 3+ hours manually comparing LCOE data across IRENA, Lazard, and BNEF reports',
+    solution: 'Ask one question, get a cross-source benchmark with conflict detection in 10 seconds',
+    query: 'Compare solar PV LCOE across all sources for 2024',
+  },
+  {
+    persona: 'Project Developer',
+    problem: 'Misses a regulatory deadline because policy tracking is scattered across 12 government websites',
+    solution: 'Get a structured policy brief with key dates, implications, and action items',
+    query: 'What are current solar incentives in India?',
+  },
+  {
+    persona: 'Technical Advisor',
+    problem: 'Manually compiles DD checklists from IFC/World Bank PDFs for each new project',
+    solution: 'Generate a country-specific due diligence pack with checklist, risk register, and document request list',
+    query: 'TDD checklist for solar PV feasibility in India',
+  },
+  {
+    persona: 'Lender / DFI',
+    problem: 'Reviews 200-page feasibility studies without a standard framework to compare projects',
+    solution: 'Edit AI-generated reports in-browser, export to DOCX/XLSX, share with stakeholders',
+    query: 'Risk register for hybrid PV + BESS project',
   },
 ];
 
@@ -94,60 +145,55 @@ const TRUST_ITEMS = [
     ),
   },
   {
+    title: 'Editable deliverables',
+    desc: 'Edit AI-generated reports in-browser, save drafts with version history, export to DOCX or XLSX.',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+      </svg>
+    ),
+  },
+  {
     title: 'Country-aware',
-    desc: 'Results are ranked and enriched with local regulatory context for 15+ countries.',
+    desc: 'Results enriched with local regulatory context for Vietnam, India, Philippines, Australia & more.',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
       </svg>
     ),
   },
-  {
-    title: 'Export & API',
-    desc: 'Download CSV/JSON or integrate via API key for automated workflows.',
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-      </svg>
-    ),
-  },
 ];
 
-// ─── Color helpers ───────────────────────────────────────────────────────────
+// ─── Chat badge colors ──────────────────────────────────────────────────────
 
-const PILLAR_STYLES: Record<string, { bg: string; border: string; iconBg: string; text: string; tag: string; queryHover: string }> = {
-  emerald: {
-    bg: 'bg-emerald-50/60',
-    border: 'border-emerald-200',
-    iconBg: 'bg-gradient-to-br from-emerald-400 to-teal-600',
-    text: 'text-emerald-700',
-    tag: 'bg-emerald-100 text-emerald-700',
-    queryHover: 'hover:border-emerald-300 hover:bg-emerald-50/60',
-  },
-  blue: {
-    bg: 'bg-blue-50/60',
-    border: 'border-blue-200',
-    iconBg: 'bg-gradient-to-br from-blue-400 to-indigo-600',
-    text: 'text-blue-700',
-    tag: 'bg-blue-100 text-blue-700',
-    queryHover: 'hover:border-blue-300 hover:bg-blue-50/60',
-  },
-  amber: {
-    bg: 'bg-amber-50/60',
-    border: 'border-amber-200',
-    iconBg: 'bg-gradient-to-br from-amber-400 to-orange-600',
-    text: 'text-amber-700',
-    tag: 'bg-amber-100 text-amber-700',
-    queryHover: 'hover:border-amber-300 hover:bg-amber-50/60',
-  },
+const BADGE_STYLES: Record<string, string> = {
+  benchmark_report: 'bg-emerald-100 text-emerald-700',
+  policy_report: 'bg-blue-100 text-blue-700',
+  project_guidance_report: 'bg-amber-100 text-amber-700',
 };
 
-// ─── Component ───────────────────────────────────────────────────────────────
+const BADGE_LABELS: Record<string, string> = {
+  benchmark_report: 'Benchmark Report',
+  policy_report: 'Policy Brief',
+  project_guidance_report: 'Guidance Pack',
+};
+
+const TAB_COLORS: Record<string, { active: string; inactive: string }> = {
+  emerald: { active: 'bg-emerald-600 text-white shadow-sm', inactive: 'text-gray-500 hover:text-emerald-700 hover:bg-emerald-50' },
+  blue: { active: 'bg-blue-600 text-white shadow-sm', inactive: 'text-gray-500 hover:text-blue-700 hover:bg-blue-50' },
+  amber: { active: 'bg-amber-600 text-white shadow-sm', inactive: 'text-gray-500 hover:text-amber-700 hover:bg-amber-50' },
+};
+
+// ─── Component ──────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
   const [demo, setDemo] = useState<ComparisonResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeChat, setActiveChat] = useState(0);
+  const [typing, setTyping] = useState(false);
+  const [visibleMessages, setVisibleMessages] = useState(0);
+  const chatRef = useRef<HTMLDivElement>(null);
 
   const loadDemo = async () => {
     setLoading(true);
@@ -161,6 +207,27 @@ export default function LandingPage() {
     setLoading(false);
   };
 
+  // Animate chat messages appearing one by one
+  useEffect(() => {
+    const chat = SAMPLE_CHATS[activeChat];
+    setVisibleMessages(0);
+    setTyping(false);
+
+    const timers: NodeJS.Timeout[] = [];
+
+    chat.messages.forEach((_, i) => {
+      timers.push(setTimeout(() => {
+        if (i > 0) setTyping(true);
+        timers.push(setTimeout(() => {
+          setTyping(false);
+          setVisibleMessages(i + 1);
+        }, i === 0 ? 0 : 800));
+      }, i === 0 ? 200 : 1200 * i));
+    });
+
+    return () => timers.forEach(clearTimeout);
+  }, [activeChat]);
+
   return (
     <div className="space-y-20 pb-12">
       {/* ── Hero ── */}
@@ -170,56 +237,195 @@ export default function LandingPage() {
           Powered by IRENA, Lazard, BNEF, EIA, NREL, IFC
         </div>
         <h1 className="text-3xl md:text-5xl font-bold text-gray-900 leading-tight tracking-tight">
-          Energy intelligence for
+          Your AI analyst for
           <br className="hidden sm:block" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
-            decisions that matter
+            renewable energy decisions
           </span>
         </h1>
-        <p className="text-base md:text-lg text-gray-500 max-w-xl mx-auto leading-relaxed">
-          Compare costs, track policies, and generate project checklists
-          — all backed by structured data from the world&apos;s leading energy reports.
+        <p className="text-base md:text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
+          Ask a question in plain English. Get a structured, cited answer from IRENA, Lazard, BNEF, and 10+ sources
+          — with benchmark reports, policy briefs, and due diligence packs you can edit and export.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+          <Link
+            href="/compare"
+            className="px-6 py-3 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm touch-target transition-all shadow-sm hover:shadow-md"
+          >
+            Try it free
+          </Link>
           <button
             onClick={loadDemo}
             disabled={loading}
-            className="px-6 py-3 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm touch-target transition-all shadow-sm hover:shadow-md"
+            className="px-6 py-3 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium text-sm touch-target text-center transition-all"
           >
             {loading ? (
-              <span className="flex items-center gap-2">
+              <span className="flex items-center justify-center gap-2">
                 <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                Loading demo...
+                Loading...
               </span>
             ) : (
-              'Try it — Solar LCOE comparison'
+              'See live demo'
             )}
           </button>
-          <Link
-            href="/auth/signin"
-            className="px-6 py-3 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium text-sm touch-target text-center transition-all"
-          >
-            Sign in free
-          </Link>
         </div>
       </section>
 
-      {/* ── Demo result ── */}
+      {/* ── Sample Chat Demo ── */}
+      <section className="max-w-3xl mx-auto">
+        <div className="text-center space-y-2 mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">See it in action</h2>
+          <p className="text-gray-500 text-sm">
+            Real questions energy professionals ask every day. Click a tab to see how the AI responds.
+          </p>
+        </div>
+
+        {/* Chat tabs */}
+        <div className="flex gap-2 mb-4 justify-center">
+          {SAMPLE_CHATS.map((chat, i) => {
+            const colors = TAB_COLORS[chat.color];
+            return (
+              <button
+                key={chat.label}
+                onClick={() => setActiveChat(i)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeChat === i ? colors.active : colors.inactive
+                }`}
+              >
+                {chat.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Chat window */}
+        <div
+          ref={chatRef}
+          className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
+        >
+          {/* Chat header */}
+          <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/80 flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <span className="text-sm font-medium text-gray-700">AI Energy Analyst</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          </div>
+
+          {/* Messages */}
+          <div className="p-5 space-y-4 min-h-[320px]">
+            {SAMPLE_CHATS[activeChat].messages.slice(0, visibleMessages).map((msg, i) => (
+              <div
+                key={`${activeChat}-${i}`}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+              >
+                {msg.role === 'user' ? (
+                  <div className="bg-gray-900 text-white px-4 py-2.5 rounded-2xl rounded-br-md max-w-[85%] text-sm">
+                    {msg.text}
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 border border-gray-100 rounded-2xl rounded-bl-md max-w-[95%] p-4 space-y-3">
+                    {msg.badge && (
+                      <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${BADGE_STYLES[msg.badge]}`}>
+                        {BADGE_LABELS[msg.badge]}
+                      </span>
+                    )}
+                    <p className="text-sm text-gray-700 leading-relaxed">{msg.text}</p>
+                    {msg.table && (
+                      <div className="overflow-x-auto -mx-1">
+                        <table className="w-full text-xs border-collapse">
+                          <thead>
+                            <tr>
+                              {msg.table.headers.map((h) => (
+                                <th key={h} className="text-left px-3 py-2 border-b border-gray-200 font-semibold text-gray-600 bg-white">
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {msg.table.rows.map((row, ri) => (
+                              <tr key={ri} className="border-b border-gray-50 last:border-0">
+                                {row.map((cell, ci) => (
+                                  <td key={ci} className="px-3 py-2 text-gray-700">
+                                    {ci === 0 ? <span className="font-medium">{cell}</span> : cell}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    {msg.sources && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {msg.sources.map((s) => (
+                          <span key={s} className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 pt-1">
+                      <Link
+                        href={`/compare?q=${encodeURIComponent(SAMPLE_CHATS[activeChat].messages[0].text)}`}
+                        className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+                      >
+                        Try this query
+                      </Link>
+                      <span className="text-gray-200">|</span>
+                      <span className="text-[11px] text-gray-400">Edit & export to DOCX</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Typing indicator */}
+            {typing && (
+              <div className="flex justify-start animate-in fade-in duration-200">
+                <div className="bg-gray-50 border border-gray-100 rounded-2xl rounded-bl-md px-4 py-3">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mock input */}
+          <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50">
+            <Link
+              href="/compare"
+              className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-400 hover:border-emerald-300 hover:text-gray-500 transition-all"
+            >
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+              </svg>
+              Ask about any energy cost, policy, or project guideline...
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Live demo result ── */}
       {loading && (
         <section className="max-w-3xl mx-auto">
           <CardSkeleton />
         </section>
       )}
-
       {error && (
         <section className="max-w-3xl mx-auto text-center">
           <p className="text-sm text-red-600 bg-red-50 rounded-xl p-4">{error}</p>
         </section>
       )}
-
       {demo && !loading && (
         <section className="max-w-3xl mx-auto">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 md:p-6">
@@ -229,7 +435,7 @@ export default function LandingPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h2 className="text-lg font-semibold text-gray-900">Solar LCOE Comparison — 2024</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Live Demo: Solar LCOE Comparison</h2>
             </div>
             <ComparisonTable result={demo} />
             <div className="mt-4 pt-4 border-t border-gray-100 text-center">
@@ -243,6 +449,44 @@ export default function LandingPage() {
           </div>
         </section>
       )}
+
+      {/* ── Who is this for ── */}
+      <section className="max-w-4xl mx-auto">
+        <div className="text-center space-y-2 mb-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Built for energy professionals</h2>
+          <p className="text-gray-500 text-sm max-w-lg mx-auto">
+            Replace hours of manual research with one question. Here&apos;s what your peers use it for.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-5">
+          {USE_CASES.map((uc) => (
+            <div key={uc.persona} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 hover:border-gray-200 transition-colors">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center text-white text-xs font-bold">
+                  {uc.persona.split(' ').map(w => w[0]).join('')}
+                </div>
+                <h3 className="text-sm font-bold text-gray-900">{uc.persona}</h3>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-start gap-2">
+                  <span className="text-red-400 text-xs mt-0.5 flex-shrink-0">Before:</span>
+                  <p className="text-xs text-gray-500 leading-relaxed">{uc.problem}</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-emerald-500 text-xs mt-0.5 flex-shrink-0">Now:</span>
+                  <p className="text-xs text-gray-700 leading-relaxed font-medium">{uc.solution}</p>
+                </div>
+              </div>
+              <Link
+                href={`/compare?q=${encodeURIComponent(uc.query)}`}
+                className="inline-block text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+              >
+                Try: &ldquo;{uc.query}&rdquo; &rarr;
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* ── Metrics bar ── */}
       <section className="max-w-4xl mx-auto">
@@ -259,63 +503,41 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Three pillars ── */}
-      <section className="max-w-4xl mx-auto space-y-6">
+      {/* ── How it works ── */}
+      <section className="max-w-3xl mx-auto">
         <div className="text-center space-y-2 mb-10">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Three workflows, one platform</h2>
-          <p className="text-gray-500 max-w-lg mx-auto text-sm">
-            Whether you&apos;re benchmarking costs, tracking regulations, or running due diligence
-            — structured data replaces hours of manual research.
-          </p>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">From question to deliverable in 3 steps</h2>
         </div>
-
-        <div className="space-y-8">
-          {PILLARS.map((pillar) => {
-            const s = PILLAR_STYLES[pillar.color];
-            return (
-              <div
-                key={pillar.title}
-                className={`rounded-2xl border ${s.border} ${s.bg} p-6 md:p-8`}
-              >
-                <div className="flex flex-col md:flex-row md:items-start gap-6">
-                  {/* Left: info */}
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl ${s.iconBg} flex items-center justify-center text-white shadow-sm`}>
-                        {pillar.icon}
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-900">{pillar.title}</h3>
-                        <p className={`text-xs font-medium ${s.text}`}>{pillar.subtitle}</p>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600 leading-relaxed">{pillar.description}</p>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {pillar.sources.map((src) => (
-                        <span key={src} className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${s.tag}`}>
-                          {src}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Right: example queries */}
-                  <div className="md:w-[340px] space-y-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">Example queries</p>
-                    {pillar.queries.map((q) => (
-                      <Link
-                        key={q}
-                        href={`/compare?q=${encodeURIComponent(q)}`}
-                        className={`block text-left text-sm px-4 py-2.5 rounded-xl border border-gray-200 bg-white/80 text-gray-700 transition-all duration-150 hover:shadow-sm ${s.queryHover}`}
-                      >
-                        {q}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          {[
+            {
+              step: '1',
+              title: 'Ask in plain English',
+              desc: 'Type any energy question. The AI detects whether you need a benchmark, policy brief, or project guidance pack.',
+              example: '"What is the LCOE of offshore wind in Europe?"',
+            },
+            {
+              step: '2',
+              title: 'Get a structured answer',
+              desc: 'Cross-referenced data from IRENA, Lazard, BNEF, and government sources. With tables, charts, and conflict detection.',
+              example: 'Comparison table + narrative + source citations',
+            },
+            {
+              step: '3',
+              title: 'Edit, save, export',
+              desc: 'Open the report in-browser. Edit any field. Save drafts with version history. Export to DOCX or XLSX for your team.',
+              example: 'Editable benchmark report exported as Word doc',
+            },
+          ].map((s) => (
+            <div key={s.step} className="text-center space-y-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 font-bold text-sm flex items-center justify-center mx-auto">
+                {s.step}
               </div>
-            );
-          })}
+              <h3 className="text-sm font-bold text-gray-900">{s.title}</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">{s.desc}</p>
+              <p className="text-[11px] text-gray-400 italic">{s.example}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -347,7 +569,7 @@ export default function LandingPage() {
             Start with a question
           </h2>
           <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
-            No credit card required. Ask about any energy cost, policy, or guideline
+            No credit card required. 5 free queries per week. Ask about any energy cost, policy, or guideline
             and get a structured, cited answer in seconds.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
