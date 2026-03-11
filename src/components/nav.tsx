@@ -31,6 +31,7 @@ export function TopNav({ session }: NavProps) {
       </Link>
       <nav className="flex items-center gap-1">
         <NavLink href="/compare">Chat</NavLink>
+        <NavLink href="/documents">Documents</NavLink>
         <NavLink href="/dashboard">Dashboard</NavLink>
         <NavLink href="/billing">Billing</NavLink>
         {user?.role === 'admin' && <NavLink href="/admin">Admin</NavLink>}

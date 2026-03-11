@@ -4,7 +4,7 @@ import { Suspense, useRef, useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from '@/hooks/use-session';
-import { streamChat, saveExportReport, type ChatMessage, type ChatMeta, type ChatQuotaError } from '@/lib/api-client';
+import { streamChat, saveExportReport, createEditableDocument, type ChatMessage, type ChatMeta, type ChatQuotaError, type DocumentType } from '@/lib/api-client';
 import { PolicyAnswer } from '@/components/PolicyAnswer';
 import { ProjectGuidanceCard } from '@/components/ProjectGuidancePack';
 import { QuotaModal } from '@/components/quota-modal';
@@ -451,6 +451,26 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
     return elements;
   };
 
+  const editReport = async (type: 'policy' | 'guidance' | 'benchmark', data: unknown) => {
+    const reportData = data as Record<string, unknown>;
+    const docTypeMap: Record<string, DocumentType> = {
+      policy: 'policy_report',
+      guidance: 'project_guidance_report',
+      benchmark: 'benchmark_report',
+    };
+    const title = String(reportData.topic ?? reportData.summary ?? type).slice(0, 200);
+
+    const { data: created, error } = await createEditableDocument({
+      type: docTypeMap[type],
+      title,
+      contentJson: { ...reportData, title },
+    });
+
+    if (created?.id) {
+      window.open(`/documents/edit?id=${created.id}`, '_blank');
+    }
+  };
+
   const openReport = async (type: 'policy' | 'guidance' | 'benchmark', data: unknown) => {
     const reportData = data as Record<string, unknown>;
     const sourceObjectTypeMap = { policy: 'policy_brief', guidance: 'project_guidance_pack', benchmark: 'benchmark_brief' };
@@ -479,17 +499,20 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
     }
   };
 
+  const mode = meta?.deliverableMode ?? 'report'; // fallback to report (full) for old responses
+  const showProductCards = mode === 'report' || mode === 'brief';
+
   return (
     <div>
-      {/* Structured policy briefing card — shown above narrative when available */}
-      {meta?.policyAnswer && (
+      {/* Structured policy briefing card — only in report/brief modes */}
+      {showProductCards && meta?.policyAnswer && (
         <div className="mb-3">
           <PolicyAnswer data={meta.policyAnswer} />
         </div>
       )}
 
-      {/* Structured guidance pack — shown above narrative when available */}
-      {meta?.guidancePack && (
+      {/* Structured guidance pack — only in report/brief modes */}
+      {showProductCards && meta?.guidancePack && (
         <div className="mb-3">
           <ProjectGuidanceCard data={meta.guidancePack} />
         </div>
@@ -516,29 +539,56 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
       {/* Narrative content from LLM */}
       <div className="space-y-0.5">{renderContent(content)}</div>
 
-      {/* Report export buttons */}
-      {(meta?.policyAnswer || meta?.guidancePack) && (
+      {/* Secondary actions — report export buttons */}
+      {(meta?.policyAnswer || meta?.guidancePack || meta?.hasPolicyData || meta?.hasGuidanceData) && (
         <div className="mt-3 flex flex-wrap gap-2">
-          {meta?.policyAnswer && (
+          {(meta?.policyAnswer || meta?.hasPolicyData) && (
             <button
-              onClick={() => openReport('policy', meta.policyAnswer)}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors print:hidden"
+              onClick={() => meta?.policyAnswer && openReport('policy', meta.policyAnswer)}
+              disabled={!meta?.policyAnswer}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors print:hidden disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!meta?.policyAnswer ? 'Ask for a "full report" to generate the exportable version' : undefined}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              Open Policy Report
+              {showProductCards ? 'Open Policy Report' : 'Request Full Policy Report'}
+            </button>
+          )}
+          {(meta?.guidancePack || meta?.hasGuidanceData) && (
+            <button
+              onClick={() => meta?.guidancePack && openReport('guidance', meta.guidancePack)}
+              disabled={!meta?.guidancePack}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-teal-200 text-teal-600 hover:bg-teal-50 transition-colors print:hidden disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!meta?.guidancePack ? 'Ask for a "full report" to generate the exportable version' : undefined}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {showProductCards ? 'Open Guidance Report' : 'Request Full Guidance Report'}
+            </button>
+          )}
+          {/* Edit buttons — create editable draft */}
+          {meta?.policyAnswer && (
+            <button
+              onClick={() => editReport('policy', meta.policyAnswer)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors print:hidden"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Edit Policy Brief
             </button>
           )}
           {meta?.guidancePack && (
             <button
-              onClick={() => openReport('guidance', meta.guidancePack)}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-teal-200 text-teal-600 hover:bg-teal-50 transition-colors print:hidden"
+              onClick={() => editReport('guidance', meta.guidancePack)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors print:hidden"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
-              Open Guidance Report
+              Edit Guidance Pack
             </button>
           )}
         </div>

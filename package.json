@@ -11,6 +11,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@tiptap/pm": "^3.20.1",
+    "@tiptap/react": "^3.20.1",
+    "@tiptap/starter-kit": "^3.20.1",
     "@vitejs/plugin-react": "^5.1.4",
     "clsx": "^2.1.1",
     "next": "^14.2.21",

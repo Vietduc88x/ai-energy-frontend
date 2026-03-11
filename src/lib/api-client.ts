@@ -252,6 +252,65 @@ export function getExportReport(id: string) {
   return apiFetch<ExportReportResponse>(`/api/v1/export-reports/${id}`);
 }
 
+// ─── Editable Documents API ──────────────────────────────────────────────────
+
+export type DocumentType = 'benchmark_report' | 'policy_report' | 'project_guidance_report';
+
+export interface EditableDocumentSummary {
+  id: string;
+  type: DocumentType;
+  title: string;
+  status: 'draft' | 'final';
+  currentVersionNo: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EditableDocument extends EditableDocumentSummary {
+  contentJson: Record<string, unknown>;
+}
+
+export interface DocumentVersion {
+  id: string;
+  versionNo: number;
+  createdAt: string;
+}
+
+export function createEditableDocument(body: { type: DocumentType; title: string; sourceExportReportId?: string; contentJson: Record<string, unknown> }) {
+  return apiFetch<{ id: string; versionNo: number }>('/api/v1/documents', { method: 'POST', body: JSON.stringify(body) });
+}
+
+export function listEditableDocuments(params?: { type?: string; status?: string }) {
+  const qs = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : '';
+  return apiFetch<{ documents: EditableDocumentSummary[] }>(`/api/v1/documents${qs}`);
+}
+
+export function getEditableDocument(id: string) {
+  return apiFetch<EditableDocument>(`/api/v1/documents/${id}`);
+}
+
+export function saveEditableDocument(id: string, body: { title?: string; status?: string; contentJson: Record<string, unknown> }) {
+  return apiFetch<{ id: string; versionNo: number }>(`/api/v1/documents/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+}
+
+export function deleteEditableDocument(id: string) {
+  return apiFetch<void>(`/api/v1/documents/${id}`, { method: 'DELETE' });
+}
+
+export function listDocumentVersions(id: string) {
+  return apiFetch<{ versions: DocumentVersion[] }>(`/api/v1/documents/${id}/versions`);
+}
+
+export function getDocumentVersion(id: string, versionNo: number) {
+  return apiFetch<{ id: string; versionNo: number; contentJson: Record<string, unknown>; createdAt: string }>(`/api/v1/documents/${id}/versions/${versionNo}`);
+}
+
+export function exportDocument(id: string, format: 'docx' | 'xlsx'): string {
+  // Returns the URL for direct download (browser will handle the download)
+  const base = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_API_URL || '') : '';
+  return `${base}/api/v1/documents/${id}/export/${format}`;
+}
+
 // ─── Chat API (SSE streaming) ────────────────────────────────────────────────
 
 export interface ChatMessage {
@@ -319,13 +378,18 @@ export interface VisualDeliverable {
   citations?: Array<{ source: string; title: string; url?: string | null }>;
 }
 
+export type DeliverableMode = 'brief' | 'report' | 'checklist' | 'visual' | 'table';
+
 export interface ChatMeta {
+  deliverableMode?: DeliverableMode;
   factsUsed: number;
   technologies: string[];
   regions: string[];
   metrics: string[];
   policyAnswer?: PolicyAnswerEnvelope;
   guidancePack?: ProjectGuidancePack;
+  hasPolicyData?: boolean;
+  hasGuidanceData?: boolean;
   visuals?: VisualDeliverable[];
 }
 
