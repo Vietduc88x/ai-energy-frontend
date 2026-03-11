@@ -250,6 +250,13 @@ export interface ChatMeta {
  * Send a chat message and receive a streaming SSE response.
  * Returns an object with callbacks for tokens, meta, done, and error events.
  */
+export interface ChatQuotaError {
+  error: string;
+  used: number;
+  limit: number;
+  tier: string;
+}
+
 export function streamChat(
   message: string,
   history: ChatMessage[],
@@ -258,6 +265,7 @@ export function streamChat(
     onToken?: (token: string) => void;
     onDone?: (latencyMs: number) => void;
     onError?: (message: string) => void;
+    onQuotaExceeded?: (info: ChatQuotaError) => void;
   },
 ): AbortController {
   const controller = new AbortController();
@@ -272,6 +280,10 @@ export function streamChat(
     .then(async (res) => {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        if (res.status === 429 && body.limit && callbacks.onQuotaExceeded) {
+          callbacks.onQuotaExceeded(body as ChatQuotaError);
+          return;
+        }
         callbacks.onError?.(body.error || `Request failed (${res.status})`);
         return;
       }

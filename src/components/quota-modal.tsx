@@ -6,10 +6,11 @@ interface Props {
   tier: string;
   limit: number | 'unlimited';
   suggestedTier?: string;
+  unitLabel?: string;
   onClose: () => void;
 }
 
-export function QuotaModal({ tier, limit, suggestedTier, onClose }: Props) {
+export function QuotaModal({ tier, limit, suggestedTier, unitLabel, onClose }: Props) {
   const router = useRouter();
 
   const handleUpgrade = () => {
@@ -28,7 +29,7 @@ export function QuotaModal({ tier, limit, suggestedTier, onClose }: Props) {
         <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-xl w-full md:max-w-md p-6 pb-safe">
           <h2 className="text-lg font-bold text-gray-900 mb-2">Usage limit reached</h2>
           <p className="text-sm text-gray-600 mb-4">
-            You&apos;ve hit the <strong>{limit}</strong> comparisons/month limit on the <strong>{tier}</strong> plan.
+            You&apos;ve hit the <strong>{limit}</strong> {unitLabel ?? 'queries/week'} limit on the <strong>{tier}</strong> plan.
           </p>
 
           <div className="bg-gray-50 rounded-lg p-3 mb-4">
@@ -37,7 +38,7 @@ export function QuotaModal({ tier, limit, suggestedTier, onClose }: Props) {
               <span className="font-medium">{tier}</span>
             </div>
             <div className="flex justify-between text-sm mt-1">
-              <span className="text-gray-500">Monthly limit</span>
+              <span className="text-gray-500">Limit</span>
               <span className="font-medium">{limit}</span>
             </div>
           </div>

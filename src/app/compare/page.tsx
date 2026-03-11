@@ -4,8 +4,9 @@ import { Suspense, useRef, useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from '@/hooks/use-session';
-import { streamChat, type ChatMessage, type ChatMeta } from '@/lib/api-client';
+import { streamChat, type ChatMessage, type ChatMeta, type ChatQuotaError } from '@/lib/api-client';
 import { PolicyAnswer } from '@/components/PolicyAnswer';
+import { QuotaModal } from '@/components/quota-modal';
 
 interface Message {
   id: string;
@@ -65,6 +66,7 @@ function ComparePageContent() {
   const controllerRef = useRef<AbortController | null>(null);
   const prefillConsumed = useRef(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [quotaInfo, setQuotaInfo] = useState<ChatQuotaError | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -124,6 +126,11 @@ function ComparePageContent() {
         ));
         setStreaming(false);
         textareaRef.current?.focus();
+      },
+      onQuotaExceeded: (info) => {
+        setMessages(prev => prev.filter(m => m.id !== assistantMsg.id));
+        setQuotaInfo(info);
+        setStreaming(false);
       },
       onError: (errMsg) => {
         setMessages(prev => prev.map(m =>
@@ -351,6 +358,14 @@ function ComparePageContent() {
                 </button>
               </div>
             </div>
+          )}
+
+          {quotaInfo && (
+            <QuotaModal
+              tier={quotaInfo.tier}
+              limit={quotaInfo.limit}
+              onClose={() => setQuotaInfo(null)}
+            />
           )}
         </div>
       </div>
