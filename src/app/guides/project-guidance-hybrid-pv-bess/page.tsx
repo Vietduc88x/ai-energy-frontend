@@ -10,7 +10,7 @@ const DESCRIPTION = 'Structured project guidance for hybrid solar PV and battery
 const URL = 'https://agent.techmadeeasy.info/guides/project-guidance-hybrid-pv-bess';
 
 export const metadata: Metadata = {
-  title: `${TITLE} | AI Energy Analyst`,
+  title: TITLE,
   description: DESCRIPTION,
   openGraph: {
     title: TITLE,

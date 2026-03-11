@@ -10,7 +10,7 @@ const DESCRIPTION = 'Current solar energy policy in the Philippines: Green Energ
 const URL = 'https://agent.techmadeeasy.info/policy/philippines-solar-snapshot';
 
 export const metadata: Metadata = {
-  title: `${TITLE} | AI Energy Analyst`,
+  title: TITLE,
   description: DESCRIPTION,
   openGraph: {
     title: TITLE,

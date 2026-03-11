@@ -9,7 +9,7 @@ const DESCRIPTION = 'Compare onshore and offshore wind levelized cost of energy 
 const URL = 'https://agent.techmadeeasy.info/insights/wind-lcoe-2024-onshore-vs-offshore';
 
 export const metadata: Metadata = {
-  title: `${TITLE} | AI Energy Analyst`,
+  title: TITLE,
   description: DESCRIPTION,
   openGraph: {
     title: TITLE,

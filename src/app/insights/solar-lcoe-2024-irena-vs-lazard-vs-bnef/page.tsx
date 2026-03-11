@@ -9,7 +9,7 @@ const DESCRIPTION = 'Compare solar PV levelized cost of energy across IRENA, Laz
 const URL = 'https://agent.techmadeeasy.info/insights/solar-lcoe-2024-irena-vs-lazard-vs-bnef';
 
 export const metadata: Metadata = {
-  title: `${TITLE} | AI Energy Analyst`,
+  title: TITLE,
   description: DESCRIPTION,
   openGraph: {
     title: TITLE,

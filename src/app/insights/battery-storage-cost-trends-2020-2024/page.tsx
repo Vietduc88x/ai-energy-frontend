@@ -9,7 +9,7 @@ const DESCRIPTION = 'Track lithium-ion battery energy storage costs from 2020 to
 const URL = 'https://agent.techmadeeasy.info/insights/battery-storage-cost-trends-2020-2024';
 
 export const metadata: Metadata = {
-  title: `${TITLE} | AI Energy Analyst`,
+  title: TITLE,
   description: DESCRIPTION,
   openGraph: {
     title: TITLE,

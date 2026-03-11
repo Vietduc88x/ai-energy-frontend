@@ -10,7 +10,7 @@ const DESCRIPTION = 'Current solar energy policy in Vietnam: FiT successor mecha
 const URL = 'https://agent.techmadeeasy.info/policy/vietnam-solar-snapshot';
 
 export const metadata: Metadata = {
-  title: `${TITLE} | AI Energy Analyst`,
+  title: TITLE,
   description: DESCRIPTION,
   openGraph: {
     title: TITLE,
