@@ -214,6 +214,44 @@ export function getUserProfile() {
   return apiFetch<UserProfile>('/api/v1/user/me');
 }
 
+// ─── Export Reports API ──────────────────────────────────────────────────────
+
+export interface SaveReportRequest {
+  reportType: string;
+  sourceObjectType: string;
+  sourceObjectId?: string | null;
+  title: string;
+  subtitle?: string | null;
+  report: Record<string, unknown>;
+}
+
+export interface SaveReportResponse {
+  id: string;
+}
+
+export interface ExportReportResponse {
+  id: string;
+  reportType: string;
+  sourceObjectType: string;
+  title: string;
+  subtitle?: string | null;
+  report: Record<string, unknown>;
+  createdAt: string;
+}
+
+/** Save a report snapshot for durable access */
+export function saveExportReport(body: SaveReportRequest) {
+  return apiFetch<SaveReportResponse>('/api/v1/export-reports', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+/** Fetch a saved report by ID (public) */
+export function getExportReport(id: string) {
+  return apiFetch<ExportReportResponse>(`/api/v1/export-reports/${id}`);
+}
+
 // ─── Chat API (SSE streaming) ────────────────────────────────────────────────
 
 export interface ChatMessage {
@@ -238,12 +276,57 @@ export interface PolicyAnswerEnvelope {
   caveat?: string | null;
 }
 
+export interface ProjectGuidancePack {
+  id: string;
+  type: 'project_guidance_pack';
+  createdAt: string;
+  projectType: string;
+  technology: string[];
+  stage: string;
+  jurisdiction?: string | null;
+  summary: string;
+  stageGuidance: string[];
+  checklist: Array<{ section: string; items: string[] }>;
+  documentRequestList: Array<{
+    category: string;
+    documents: Array<{ name: string; whyItMatters?: string | null }>;
+  }>;
+  epcReviewQuestions: Array<{ section: string; questions: string[] }>;
+  riskStarter: Array<{
+    risk: string;
+    cause?: string | null;
+    impact?: string | null;
+    mitigation?: string | null;
+  }>;
+  sourceCoverage: { guidelineCount: number; sourcesUsed: string[] };
+  citations: Array<{
+    source: string;
+    title: string;
+    section?: string | null;
+    url?: string | null;
+  }>;
+  caveat?: string | null;
+}
+
+export interface VisualDeliverable {
+  id: string;
+  visualType: string;
+  version: string;
+  createdAt: string;
+  sourceObjectType: string;
+  sourceObjectId?: string | null;
+  spec: Record<string, unknown>;
+  citations?: Array<{ source: string; title: string; url?: string | null }>;
+}
+
 export interface ChatMeta {
   factsUsed: number;
   technologies: string[];
   regions: string[];
   metrics: string[];
   policyAnswer?: PolicyAnswerEnvelope;
+  guidancePack?: ProjectGuidancePack;
+  visuals?: VisualDeliverable[];
 }
 
 /**

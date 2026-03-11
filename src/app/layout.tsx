@@ -3,6 +3,7 @@ import './globals.css';
 import { AppShell } from '@/components/app-shell';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://energyanalyst.ai'),
   title: {
     default: 'AI Energy Analyst',
     template: '%s | AI Energy Analyst',

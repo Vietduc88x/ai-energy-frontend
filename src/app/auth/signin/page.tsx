@@ -22,7 +22,8 @@ function SignInPageContent() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [inApp] = useState(isInAppBrowser);
 
-  const returnTo = searchParams.get('returnTo') || '/compare';
+  const rawReturn = searchParams.get('returnTo') || '/compare';
+  const returnTo = rawReturn.startsWith('/') && !rawReturn.startsWith('//') ? rawReturn : '/compare';
 
   useEffect(() => {
     if (searchParams.get('google_signup') === '1') {

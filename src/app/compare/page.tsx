@@ -4,9 +4,16 @@ import { Suspense, useRef, useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from '@/hooks/use-session';
-import { streamChat, type ChatMessage, type ChatMeta, type ChatQuotaError } from '@/lib/api-client';
+import { streamChat, saveExportReport, type ChatMessage, type ChatMeta, type ChatQuotaError } from '@/lib/api-client';
 import { PolicyAnswer } from '@/components/PolicyAnswer';
+import { ProjectGuidanceCard } from '@/components/ProjectGuidancePack';
 import { QuotaModal } from '@/components/quota-modal';
+import { BenchmarkChart } from '@/components/deliverables/BenchmarkChart';
+import { PolicyTimeline } from '@/components/deliverables/PolicyTimeline';
+import { ChecklistTable } from '@/components/deliverables/ChecklistTable';
+import { DocumentRequestMatrix } from '@/components/deliverables/DocumentRequestMatrix';
+import { RiskMatrix } from '@/components/deliverables/RiskMatrix';
+import { ProjectTimeline } from '@/components/deliverables/ProjectTimeline';
 
 interface Message {
   id: string;
@@ -444,6 +451,34 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
     return elements;
   };
 
+  const openReport = async (type: 'policy' | 'guidance' | 'benchmark', data: unknown) => {
+    const reportData = data as Record<string, unknown>;
+    const sourceObjectTypeMap = { policy: 'policy_brief', guidance: 'project_guidance_pack', benchmark: 'benchmark_brief' };
+    const reportTypeMap = { policy: 'policy_report', guidance: 'project_guidance_report', benchmark: 'benchmark_report' };
+
+    // Save to backend for durable URL
+    const { data: saved, error } = await saveExportReport({
+      reportType: reportTypeMap[type],
+      sourceObjectType: sourceObjectTypeMap[type],
+      title: (reportData.topic ?? reportData.summary ?? type) as string,
+      report: reportData,
+    });
+
+    if (saved?.id) {
+      window.open(`/reports/${type}?id=${saved.id}`, '_blank');
+    } else {
+      // Fallback: inline data in URL
+      try {
+        const encoded = encodeURIComponent(JSON.stringify(data));
+        window.open(`/reports/${type}?data=${encoded}`, '_blank');
+      } catch {
+        const key = `report_${type}_${Date.now()}`;
+        sessionStorage.setItem(key, JSON.stringify(data));
+        window.open(`/reports/${type}?key=${key}`, '_blank');
+      }
+    }
+  };
+
   return (
     <div>
       {/* Structured policy briefing card — shown above narrative when available */}
@@ -453,8 +488,61 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
         </div>
       )}
 
+      {/* Structured guidance pack — shown above narrative when available */}
+      {meta?.guidancePack && (
+        <div className="mb-3">
+          <ProjectGuidanceCard data={meta.guidancePack} />
+        </div>
+      )}
+
+      {/* Visual deliverables — rendered from structured specs */}
+      {meta?.visuals && meta.visuals.length > 0 && (
+        <div className="mb-3 space-y-3">
+          {meta.visuals.map((v) => {
+            const s = v.spec as any;
+            switch (v.visualType) {
+              case 'benchmark_chart': return <BenchmarkChart key={v.id} spec={s} />;
+              case 'policy_timeline': return <PolicyTimeline key={v.id} spec={s} />;
+              case 'checklist_table': return <ChecklistTable key={v.id} spec={s} />;
+              case 'document_request_matrix': return <DocumentRequestMatrix key={v.id} spec={s} />;
+              case 'risk_matrix': return <RiskMatrix key={v.id} spec={s} />;
+              case 'project_timeline': return <ProjectTimeline key={v.id} spec={s} />;
+              default: return null;
+            }
+          })}
+        </div>
+      )}
+
       {/* Narrative content from LLM */}
       <div className="space-y-0.5">{renderContent(content)}</div>
+
+      {/* Report export buttons */}
+      {(meta?.policyAnswer || meta?.guidancePack) && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {meta?.policyAnswer && (
+            <button
+              onClick={() => openReport('policy', meta.policyAnswer)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors print:hidden"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Open Policy Report
+            </button>
+          )}
+          {meta?.guidancePack && (
+            <button
+              onClick={() => openReport('guidance', meta.guidancePack)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-teal-200 text-teal-600 hover:bg-teal-50 transition-colors print:hidden"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Open Guidance Report
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Footer: data points used */}
       {meta && meta.factsUsed > 0 && (
