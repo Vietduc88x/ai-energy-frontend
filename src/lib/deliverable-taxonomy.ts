@@ -1,9 +1,18 @@
 /**
  * Deliverable Taxonomy — frontend-side classification for UI labels, badges,
- * and export-format awareness.
+ * export-format awareness, verbosity, and UI action rules.
  *
  * This mirrors the backend taxonomy in src/lib/deliverable-taxonomy.ts.
  * Keep in sync when adding new families or kinds.
+ *
+ * ── KEY RULES ──
+ *
+ * 1. Pack Rule: A Pack MUST contain 2+ deliverables. Single artifact = its own family.
+ * 2. Checklist vs Table vs Matrix:
+ *    - Checklist: actionable, step-like, review-oriented, completion-oriented
+ *    - Table: neutral structured data in rows/columns, not action-oriented
+ *    - Matrix: 2-dimensional decision/relationship/mapping structure
+ * 3. Taxonomy Drives Behavior: family determines rendering, export, verbosity, and UI actions.
  */
 
 // ─── Deliverable Families ───────────────────────────────────────────────────
@@ -84,6 +93,54 @@ export const FAMILY_EXPORT_FORMATS: Record<DeliverableFamily, ExportFormat[]> = 
 
 export function exportFormatsForFamily(family: DeliverableFamily): ExportFormat[] {
   return FAMILY_EXPORT_FORMATS[family];
+}
+
+// ─── Verbosity Defaults ─────────────────────────────────────────────────────
+
+/**
+ * Default output verbosity per family.
+ *   short   — compact, data-first, minimal narrative
+ *   full    — complete narrative with analysis
+ *   bundled — structured multi-section output
+ */
+export type Verbosity = 'short' | 'full' | 'bundled';
+
+export const FAMILY_VERBOSITY: Record<DeliverableFamily, Verbosity> = {
+  figure:    'short',
+  table:     'short',
+  checklist: 'short',
+  diagram:   'short',
+  timeline:  'short',
+  matrix:    'short',
+  report:    'full',
+  pack:      'bundled',
+};
+
+export function verbosityForFamily(family: DeliverableFamily): Verbosity {
+  return FAMILY_VERBOSITY[family];
+}
+
+// ─── UI Action Mapping ──────────────────────────────────────────────────────
+
+/**
+ * Available UI actions for each deliverable family.
+ * Determines which buttons appear when a deliverable is rendered.
+ */
+export type UIAction = 'export_xlsx' | 'export_png' | 'export_pdf' | 'export_docx' | 'open_report' | 'print';
+
+export const FAMILY_UI_ACTIONS: Record<DeliverableFamily, UIAction[]> = {
+  figure:    ['export_png', 'open_report'],
+  table:     ['export_xlsx', 'export_pdf'],
+  checklist: ['export_xlsx', 'open_report'],
+  diagram:   ['export_png', 'export_pdf'],
+  timeline:  ['export_png', 'export_pdf'],
+  matrix:    ['export_xlsx', 'export_pdf', 'export_docx'],
+  report:    ['print', 'export_pdf', 'export_docx'],
+  pack:      ['export_pdf', 'export_docx', 'export_xlsx'],
+};
+
+export function uiActionsForFamily(family: DeliverableFamily): UIAction[] {
+  return FAMILY_UI_ACTIONS[family];
 }
 
 // ─── Confidence Badge ───────────────────────────────────────────────────────

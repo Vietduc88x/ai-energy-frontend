@@ -220,3 +220,75 @@ describe('visual components render family badges', () => {
     expect(screen.getByText('Timeline')).toBeTruthy();
   });
 });
+
+// ─── Verbosity defaults ─────────────────────────────────────────────────────
+
+describe('verbosity defaults', () => {
+  it('figure/table/checklist/matrix/timeline/diagram are short', async () => {
+    const { FAMILY_VERBOSITY } = await import('@/lib/deliverable-taxonomy');
+    expect(FAMILY_VERBOSITY.figure).toBe('short');
+    expect(FAMILY_VERBOSITY.table).toBe('short');
+    expect(FAMILY_VERBOSITY.checklist).toBe('short');
+    expect(FAMILY_VERBOSITY.matrix).toBe('short');
+    expect(FAMILY_VERBOSITY.timeline).toBe('short');
+    expect(FAMILY_VERBOSITY.diagram).toBe('short');
+  });
+
+  it('report is full', async () => {
+    const { FAMILY_VERBOSITY } = await import('@/lib/deliverable-taxonomy');
+    expect(FAMILY_VERBOSITY.report).toBe('full');
+  });
+
+  it('pack is bundled', async () => {
+    const { FAMILY_VERBOSITY } = await import('@/lib/deliverable-taxonomy');
+    expect(FAMILY_VERBOSITY.pack).toBe('bundled');
+  });
+
+  it('verbosityForFamily works', async () => {
+    const { verbosityForFamily } = await import('@/lib/deliverable-taxonomy');
+    expect(verbosityForFamily('checklist')).toBe('short');
+    expect(verbosityForFamily('report')).toBe('full');
+    expect(verbosityForFamily('pack')).toBe('bundled');
+  });
+});
+
+// ─── UI action mapping ─────────────────────────────────────────────────────
+
+describe('UI action mapping', () => {
+  it('every family has UI actions', async () => {
+    const { DELIVERABLE_FAMILIES, FAMILY_UI_ACTIONS } = await import('@/lib/deliverable-taxonomy');
+    for (const family of DELIVERABLE_FAMILIES) {
+      expect(FAMILY_UI_ACTIONS[family].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('checklist includes export_xlsx and open_report', async () => {
+    const { uiActionsForFamily } = await import('@/lib/deliverable-taxonomy');
+    const actions = uiActionsForFamily('checklist');
+    expect(actions).toContain('export_xlsx');
+    expect(actions).toContain('open_report');
+  });
+
+  it('figure includes export_png and open_report', async () => {
+    const { uiActionsForFamily } = await import('@/lib/deliverable-taxonomy');
+    const actions = uiActionsForFamily('figure');
+    expect(actions).toContain('export_png');
+    expect(actions).toContain('open_report');
+  });
+
+  it('report includes print, export_pdf, export_docx', async () => {
+    const { uiActionsForFamily } = await import('@/lib/deliverable-taxonomy');
+    const actions = uiActionsForFamily('report');
+    expect(actions).toContain('print');
+    expect(actions).toContain('export_pdf');
+    expect(actions).toContain('export_docx');
+  });
+
+  it('different families produce different action sets', async () => {
+    const { uiActionsForFamily } = await import('@/lib/deliverable-taxonomy');
+    const figureActions = JSON.stringify(uiActionsForFamily('figure'));
+    const reportActions = JSON.stringify(uiActionsForFamily('report'));
+    const matrixActions = JSON.stringify(uiActionsForFamily('matrix'));
+    expect(new Set([figureActions, reportActions, matrixActions]).size).toBe(3);
+  });
+});
