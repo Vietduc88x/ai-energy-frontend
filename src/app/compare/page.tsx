@@ -4,7 +4,7 @@ import { Suspense, useRef, useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from '@/hooks/use-session';
-import { streamChat, saveExportReport, createEditableDocument, exportDocument as exportDocumentUrl, type ChatMessage, type ChatMeta, type ChatQuotaError, type DocumentType } from '@/lib/api-client';
+import { streamChat, createEditableDocument, exportDocument as exportDocumentUrl, type ChatMessage, type ChatMeta, type ChatQuotaError, type DocumentType } from '@/lib/api-client';
 import { PolicyAnswer } from '@/components/PolicyAnswer';
 import { ProjectGuidanceCard } from '@/components/ProjectGuidancePack';
 import { QuotaModal } from '@/components/quota-modal';
@@ -422,7 +422,6 @@ function truncateToSentences(text: string, n: number): string {
 // ─── Markdown-lite renderer for assistant messages ──────────────────────────
 
 function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta }) {
-  const [reportLoading, setReportLoading] = useState(false);
   const [reportError, setReportError] = useState<string | null>(null);
   const [xlsxLoading, setXlsxLoading] = useState(false);
 
@@ -500,34 +499,6 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
 
     if (created?.id) {
       window.open(`/documents/edit?id=${created.id}`, '_blank');
-    }
-  };
-
-  const openReport = async (type: 'policy' | 'guidance' | 'benchmark', data: unknown) => {
-    const reportData = data as Record<string, unknown>;
-    const sourceObjectTypeMap = { policy: 'policy_brief', guidance: 'project_guidance_pack', benchmark: 'benchmark_brief' };
-    const reportTypeMap = { policy: 'policy_report', guidance: 'project_guidance_report', benchmark: 'benchmark_report' };
-
-    setReportLoading(true);
-    setReportError(null);
-
-    try {
-      const { data: saved, error } = await saveExportReport({
-        reportType: reportTypeMap[type],
-        sourceObjectType: sourceObjectTypeMap[type],
-        title: (reportData.topic ?? reportData.summary ?? type) as string,
-        report: reportData,
-      });
-
-      if (saved?.id) {
-        window.open(`/reports/${type}?id=${saved.id}`, '_blank');
-      } else {
-        setReportError(error?.message ?? 'Failed to save report');
-      }
-    } catch (err: any) {
-      setReportError(err?.message ?? 'Failed to create report');
-    } finally {
-      setReportLoading(false);
     }
   };
 
@@ -613,8 +584,31 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
         </div>
       )}
 
-      {/* Compact mode action bar — XLSX export + full report CTA */}
-      {isCompactMode && (meta?.guidancePack || meta?.hasGuidanceData) && (
+      {/* Compact mode action bar — XLSX export */}
+      {isCompactMode && meta?.guidancePack && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            onClick={() => exportXlsx(meta.guidancePack)}
+            disabled={xlsxLoading}
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-600 hover:bg-emerald-50 transition-colors print:hidden disabled:opacity-60"
+          >
+            {xlsxLoading ? (
+              <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            ) : (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+            )}
+            Export XLSX
+          </button>
+        </div>
+      )}
+
+      {/* Full mode action bar — edit buttons */}
+      {!isCompactMode && (meta?.policyAnswer || meta?.guidancePack) && (
         <div className="mt-3 flex flex-wrap gap-2">
           {meta?.guidancePack && (
             <button
@@ -635,78 +629,6 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
               Export XLSX
             </button>
           )}
-          {meta?.guidancePack ? (
-            <button
-              onClick={() => openReport('guidance', meta.guidancePack)}
-              disabled={reportLoading}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-teal-200 text-teal-600 hover:bg-teal-50 transition-colors print:hidden disabled:opacity-60"
-            >
-              {reportLoading ? (
-                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-              ) : (
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              )}
-              Open Full Guidance Report
-            </button>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 text-xs text-gray-400 px-3 py-1.5">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Need exportable XLSX or PDF? Ask for a &ldquo;full report&rdquo;
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Full mode action bar — report export + edit buttons */}
-      {!isCompactMode && (meta?.policyAnswer || meta?.guidancePack || meta?.hasPolicyData || meta?.hasGuidanceData) && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {(meta?.policyAnswer || meta?.hasPolicyData) && (
-            <button
-              onClick={() => meta?.policyAnswer && openReport('policy', meta.policyAnswer)}
-              disabled={!meta?.policyAnswer || reportLoading}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors print:hidden disabled:opacity-50 disabled:cursor-not-allowed"
-              title={!meta?.policyAnswer ? 'Ask for a "full report" to generate the exportable version' : undefined}
-            >
-              {reportLoading ? (
-                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-              ) : (
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              )}
-              Open Policy Report
-            </button>
-          )}
-          {meta?.guidancePack && (
-            <button
-              onClick={() => openReport('guidance', meta.guidancePack)}
-              disabled={reportLoading}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-teal-200 text-teal-600 hover:bg-teal-50 transition-colors print:hidden disabled:opacity-60"
-            >
-              {reportLoading ? (
-                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-              ) : (
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              )}
-              Open Guidance Report
-            </button>
-          )}
-          {/* Edit buttons — create editable draft */}
           {meta?.policyAnswer && (
             <button
               onClick={() => editReport('policy', meta.policyAnswer)}

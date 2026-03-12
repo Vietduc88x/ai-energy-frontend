@@ -209,9 +209,13 @@ describe('RiskMatrix', () => {
     expect(screen.getByText('Grid curtailment')).toBeTruthy();
   });
 
-  it('renders cause and mitigation', async () => {
+  it('renders cause and mitigation after expand', async () => {
+    const { fireEvent } = await import('@testing-library/react');
     const { RiskMatrix } = await import('@/components/deliverables/RiskMatrix');
     render(<RiskMatrix spec={SPEC} />);
+    // Cause/mitigation are behind expand click — click the first risk item
+    const landRisk = screen.getByText('Land dispute');
+    fireEvent.click(landRisk);
     expect(screen.getByText(/Disputed ownership/)).toBeTruthy();
     expect(screen.getByText(/Engage counsel/)).toBeTruthy();
   });

@@ -65,8 +65,8 @@ describe('PolicyAnswer component', () => {
     const { PolicyAnswer } = await import('@/components/PolicyAnswer');
     render(<PolicyAnswer data={FIXTURE} />);
 
-    expect(screen.getByText('Policy Briefing')).toBeInTheDocument();
-    expect(screen.getByText('high confidence')).toBeInTheDocument();
+    expect(screen.getByText('Report')).toBeInTheDocument();
+    expect(screen.getByText('High confidence')).toBeInTheDocument();
     expect(screen.getAllByText(/Vietnam/).length).toBeGreaterThanOrEqual(1);
   });
 
@@ -167,7 +167,7 @@ describe('PolicyAnswer component', () => {
     const mediumConf = { ...FIXTURE, confidence: 'medium' as const };
     render(<PolicyAnswer data={mediumConf} />);
 
-    expect(screen.getByText('medium confidence')).toBeInTheDocument();
+    expect(screen.getByText('Medium confidence')).toBeInTheDocument();
   });
 
   it('handles empty arrays gracefully', async () => {
@@ -185,7 +185,7 @@ describe('PolicyAnswer component', () => {
     render(<PolicyAnswer data={empty} />);
 
     // Should still render header and current status
-    expect(screen.getByText('Policy Briefing')).toBeInTheDocument();
+    expect(screen.getByText('Report')).toBeInTheDocument();
     expect(screen.getByText('Current Status')).toBeInTheDocument();
 
     // Empty sections should not render

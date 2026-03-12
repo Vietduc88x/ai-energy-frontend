@@ -94,7 +94,7 @@ async function renderCard(data: ProjectGuidancePack) {
 describe('ProjectGuidanceCard', () => {
   it('renders the header with tag and stage', async () => {
     await renderCard(FIXTURE);
-    expect(screen.getByText('Project Guidance Pack')).toBeTruthy();
+    expect(screen.getByText('Pack')).toBeTruthy();
     expect(screen.getByText('feasibility')).toBeTruthy();
   });
 
@@ -170,7 +170,7 @@ describe('ProjectGuidanceCard', () => {
       citations: [],
     });
     // Should still render header and summary
-    expect(screen.getByText('Project Guidance Pack')).toBeTruthy();
+    expect(screen.getByText('Pack')).toBeTruthy();
     expect(screen.getByText(/Project guidance pack/)).toBeTruthy();
     // Should not render section titles for empty sections
     expect(screen.queryByText(/Stage Guidance/)).toBeNull();
