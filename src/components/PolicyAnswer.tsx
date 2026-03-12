@@ -191,7 +191,6 @@ export function PolicyAnswer({ data }: { data: PolicyAnswerEnvelope }) {
 
       <DeliverableMetaFooter meta={{
         deliverableFamily: 'report',
-        confidence: data.confidence,
         lastChecked: data.lastChecked,
         sourceCount: data.sources.length,
         caveat: data.caveat ?? null,
