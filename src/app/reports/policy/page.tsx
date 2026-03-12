@@ -5,10 +5,10 @@ import { PolicyReportView, type PolicyReportData } from '@/components/reports/Po
 import { useReportData } from '@/components/reports/useReportData';
 
 function PolicyReportInner() {
-  const { data, error, loading } = useReportData<PolicyReportData>();
+  const { data, metadata, error, loading } = useReportData<PolicyReportData>();
   if (error) return <div className="max-w-3xl mx-auto px-8 py-16 text-center text-sm text-red-600">{error}</div>;
   if (loading || !data) return <div className="max-w-3xl mx-auto px-8 py-16 text-center text-sm text-gray-400">Loading report…</div>;
-  return <PolicyReportView report={data} />;
+  return <PolicyReportView report={data} metadata={metadata} />;
 }
 
 export default function PolicyReportPage() {

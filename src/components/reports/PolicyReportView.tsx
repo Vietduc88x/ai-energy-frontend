@@ -3,6 +3,7 @@
 import { ReportHeader } from './ReportHeader';
 import { ReportSection } from './ReportSection';
 import { ReportCitationList } from './ReportCitationList';
+import type { ReportMetadata } from '@/lib/api-client';
 
 export interface PolicyReportData {
   type: 'policy_report';
@@ -27,7 +28,7 @@ export interface PolicyReportData {
 
 const SEVERITY_DOT = { high: 'bg-red-500', medium: 'bg-amber-500', low: 'bg-gray-400' };
 
-export function PolicyReportView({ report }: { report: PolicyReportData }) {
+export function PolicyReportView({ report, metadata }: { report: PolicyReportData; metadata?: ReportMetadata | null }) {
   return (
     <div className="report-container max-w-3xl mx-auto px-8 py-10 bg-white print:px-0 print:py-0 print:max-w-none">
       <ReportHeader
@@ -35,6 +36,8 @@ export function PolicyReportView({ report }: { report: PolicyReportData }) {
         subtitle={report.subtitle}
         generatedAt={report.generatedAt}
         confidence={report.confidence}
+        sourceCount={metadata?.sourceCount}
+        lastChecked={metadata?.lastChecked ?? report.lastChecked}
         onPrint={() => window.print()}
       />
 

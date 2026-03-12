@@ -3,6 +3,7 @@
 import { ReportHeader } from './ReportHeader';
 import { ReportSection } from './ReportSection';
 import { ReportCitationList } from './ReportCitationList';
+import type { ReportMetadata } from '@/lib/api-client';
 
 export interface ProjectGuidanceReportData {
   type: 'project_guidance_report';
@@ -61,7 +62,7 @@ function riskBg(likelihood: string, impact: string): string {
   return RISK_COLORS[impact]?.[likelihood] || 'bg-gray-50';
 }
 
-export function ProjectGuidanceReportView({ report }: { report: ProjectGuidanceReportData }) {
+export function ProjectGuidanceReportView({ report, metadata }: { report: ProjectGuidanceReportData; metadata?: ReportMetadata | null }) {
   // Group document request rows by category
   const docsByCategory = new Map<string, typeof report.documentRequestMatrix>();
   for (const row of report.documentRequestMatrix) {
@@ -75,6 +76,8 @@ export function ProjectGuidanceReportView({ report }: { report: ProjectGuidanceR
         title={report.title}
         subtitle={report.subtitle}
         generatedAt={report.generatedAt}
+        sourceCount={metadata?.sourceCount}
+        lastChecked={metadata?.lastChecked}
         onPrint={() => window.print()}
       />
 

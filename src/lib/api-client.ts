@@ -229,6 +229,20 @@ export interface SaveReportResponse {
   id: string;
 }
 
+export interface ReportMetadata {
+  title?: string;
+  deliverableType?: string;
+  deliverableFamily?: string;
+  generatedAt?: string;
+  context?: Record<string, unknown>;
+  version?: string;
+  confidence?: 'high' | 'medium' | 'low' | null;
+  lastChecked?: string | null;
+  sourceCount?: number | null;
+  citations?: Array<{ source: string; title: string; url?: string | null }>;
+  caveat?: string | null;
+}
+
 export interface ExportReportResponse {
   id: string;
   reportType: string;
@@ -236,6 +250,7 @@ export interface ExportReportResponse {
   title: string;
   subtitle?: string | null;
   report: Record<string, unknown>;
+  metadata?: ReportMetadata | null;
   createdAt: string;
 }
 

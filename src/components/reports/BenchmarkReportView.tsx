@@ -3,6 +3,7 @@
 import { ReportHeader } from './ReportHeader';
 import { ReportSection } from './ReportSection';
 import { ReportCitationList } from './ReportCitationList';
+import type { ReportMetadata } from '@/lib/api-client';
 
 export interface BenchmarkReportData {
   type: 'benchmark_report';
@@ -32,7 +33,7 @@ export interface BenchmarkReportData {
 
 const BAR_COLORS = ['#0d9488', '#0891b2', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e', '#f97316'];
 
-export function BenchmarkReportView({ report }: { report: BenchmarkReportData }) {
+export function BenchmarkReportView({ report, metadata }: { report: BenchmarkReportData; metadata?: ReportMetadata | null }) {
   // Chart rendering
   const series = report.chartSpec?.series || [];
   const allValues = series.flatMap(s => [s.valuePoint, s.valueMin, s.valueMax].filter((v): v is number => v != null));
@@ -44,6 +45,9 @@ export function BenchmarkReportView({ report }: { report: BenchmarkReportData })
         title={report.title}
         subtitle={report.subtitle}
         generatedAt={report.generatedAt}
+        confidence={metadata?.confidence}
+        sourceCount={metadata?.sourceCount}
+        lastChecked={metadata?.lastChecked}
         onPrint={() => window.print()}
       />
 

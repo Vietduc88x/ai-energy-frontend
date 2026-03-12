@@ -5,6 +5,8 @@ interface ReportHeaderProps {
   subtitle?: string | null;
   generatedAt: string;
   confidence?: 'high' | 'medium' | 'low' | null;
+  sourceCount?: number | null;
+  lastChecked?: string | null;
   onPrint?: () => void;
 }
 
@@ -14,7 +16,7 @@ const CONFIDENCE_STYLES = {
   low: 'bg-red-100 text-red-800',
 };
 
-export function ReportHeader({ title, subtitle, generatedAt, confidence, onPrint }: ReportHeaderProps) {
+export function ReportHeader({ title, subtitle, generatedAt, confidence, sourceCount, lastChecked, onPrint }: ReportHeaderProps) {
   const formattedDate = new Date(generatedAt).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -40,6 +42,16 @@ export function ReportHeader({ title, subtitle, generatedAt, confidence, onPrint
             <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded mt-1 ${CONFIDENCE_STYLES[confidence]}`}>
               {confidence} confidence
             </span>
+          )}
+          {(sourceCount != null || lastChecked) && (
+            <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400">
+              {sourceCount != null && sourceCount > 0 && (
+                <span>{sourceCount} source{sourceCount !== 1 ? 's' : ''}</span>
+              )}
+              {lastChecked && (
+                <span>Checked {new Date(lastChecked).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              )}
+            </div>
           )}
         </div>
       </div>
