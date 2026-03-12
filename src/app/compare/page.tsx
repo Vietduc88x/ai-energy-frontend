@@ -24,61 +24,74 @@ interface Message {
   loading?: boolean;
 }
 
+const TAG_STYLES: Record<string, string> = {
+  'Chart':          'bg-emerald-50 text-emerald-600 border-emerald-200',
+  'Table':          'bg-slate-50 text-slate-600 border-slate-200',
+  'Report':         'bg-blue-50 text-blue-600 border-blue-200',
+  'Policy Brief':   'bg-blue-50 text-blue-600 border-blue-200',
+  'Full Report':    'bg-indigo-50 text-indigo-600 border-indigo-200',
+  'Checklist':      'bg-amber-50 text-amber-600 border-amber-200',
+  'Risk Matrix':    'bg-rose-50 text-rose-600 border-rose-200',
+  'Matrix':         'bg-orange-50 text-orange-600 border-orange-200',
+  'Timeline':       'bg-violet-50 text-violet-600 border-violet-200',
+  'Gantt Timeline': 'bg-violet-50 text-violet-600 border-violet-200',
+  'Guidance Pack':  'bg-teal-50 text-teal-600 border-teal-200',
+  'Answer':         'bg-gray-50 text-gray-500 border-gray-200',
+  'Chart + Report': 'bg-emerald-50 text-emerald-600 border-emerald-200',
+  'Chart + Table':  'bg-emerald-50 text-emerald-600 border-emerald-200',
+};
+
 const SAMPLE_SECTIONS = [
   {
     label: 'Cost Benchmarks',
     color: 'emerald' as const,
     questions: [
-      { text: 'Compare solar PV LCOE across IRENA, Lazard, and BNEF — why do they disagree?' },
-      { text: 'What is the CAPEX breakdown for a 100 MW onshore wind farm?' },
-      { text: 'Battery storage cost trends 2020-2024 — is 4-hour BESS bankable yet?' },
-      { text: 'Compare offshore wind LCOE: Europe vs Asia-Pacific' },
-      { text: 'Hybrid solar + BESS LCOE vs standalone solar — when does storage improve bankability?' },
-      { text: 'How has the global weighted-average cost of capital for renewables shifted since 2021?' },
+      { text: 'Compare solar PV LCOE across IRENA, Lazard, and BNEF — why do they disagree?', tag: 'Chart' },
+      { text: 'CAPEX breakdown for a 100 MW onshore wind farm', tag: 'Table' },
+      { text: 'Battery storage cost trends 2020-2024 — is 4-hour BESS bankable yet?', tag: 'Chart + Report' },
+      { text: 'Compare offshore wind LCOE: Europe vs Asia-Pacific', tag: 'Chart' },
     ],
   },
   {
     label: 'Policy & Regulation',
     color: 'blue' as const,
     questions: [
-      { text: 'Can foreign investors do direct PPAs in Vietnam now? What changed in the latest decree?' },
-      { text: 'What solar incentives are available in India for utility-scale projects?' },
-      { text: 'Permitting timeline and grid connection process for wind in Australia' },
-      { text: 'How does the Philippines Green Energy Auction Program work?' },
-      { text: 'Compare renewable energy policy frameworks: Vietnam vs Philippines vs India' },
-      { text: 'What are the local content requirements for wind projects across Southeast Asia?' },
+      { text: 'Can foreign investors do direct PPAs in Vietnam now?', tag: 'Policy Brief' },
+      { text: 'Permitting timeline and grid connection for wind in Australia', tag: 'Timeline' },
+      { text: 'Solar incentives available in India for utility-scale projects', tag: 'Table' },
+      { text: 'Compare renewable energy frameworks: Vietnam vs Philippines vs India', tag: 'Report' },
     ],
   },
   {
     label: 'Project Guidance',
     color: 'amber' as const,
     questions: [
-      { text: 'TDD checklist for 50 MW solar PV feasibility in India' },
-      { text: 'EPC contract review questions for a solar + BESS project' },
-      { text: 'Risk register for hybrid PV + BESS in Philippines — include construction, grid, and policy risks' },
-      { text: 'Document request list for solar procurement stage' },
-      { text: 'Project development timeline for a 100 MW onshore wind farm from site selection to COD' },
-      { text: 'Due diligence framework for acquiring an operating solar portfolio in Southeast Asia' },
+      { text: 'TDD checklist for 50 MW solar PV feasibility in India', tag: 'Checklist' },
+      { text: 'EPC contract review questions for a solar + BESS project', tag: 'Checklist' },
+      { text: 'Risk register for hybrid PV + BESS in Philippines', tag: 'Risk Matrix' },
+      { text: 'Document request list for solar procurement stage', tag: 'Matrix' },
+      { text: 'Development timeline for 100 MW onshore wind — site selection to COD', tag: 'Gantt Timeline' },
+      { text: 'Due diligence framework for acquiring a solar portfolio in Southeast Asia', tag: 'Guidance Pack' },
     ],
   },
   {
-    label: 'Financial Modeling',
+    label: 'Quick Answers',
     color: 'rose' as const,
     questions: [
-      { text: 'What P50/P90 yield assumptions should lenders expect for a 50 MW PV plant in Rajasthan?' },
-      { text: 'Degradation rates and O&M cost benchmarks for utility-scale solar — IRENA vs BloombergNEF' },
-      { text: 'Revenue stacking strategies for a 100 MW / 400 MWh BESS in Australia' },
-      { text: 'Key financial model assumptions a lender will stress-test for a wind project in Vietnam' },
+      { text: 'Typical capacity factor for onshore wind in Southeast Asia?', tag: 'Answer' },
+      { text: 'P50/P90 yield assumptions lenders expect for a 50 MW PV in Rajasthan?', tag: 'Answer' },
+      { text: 'Local content requirements for wind projects across Southeast Asia?', tag: 'Answer' },
+      { text: 'Which Asia-Pacific countries have binding RE targets beyond 2030?', tag: 'Answer' },
     ],
   },
   {
-    label: 'Market Intelligence',
+    label: 'Deep Research',
     color: 'violet' as const,
     questions: [
-      { text: 'Top 10 solar developers in Southeast Asia by installed capacity — who is winning?' },
-      { text: 'What is the global pipeline for green hydrogen projects and how does electrolyzer cost trend?' },
-      { text: 'Compare auction clearing prices for solar across India, Australia, and the Philippines' },
-      { text: 'Which countries in Asia-Pacific have binding renewable energy targets beyond 2030?' },
+      { text: 'Full benchmark report: solar + BESS LCOE across IRENA, Lazard, and BNEF', tag: 'Full Report' },
+      { text: 'Complete guidance pack for 50 MW solar PV in Philippines: TDD, risks, permits, documents', tag: 'Guidance Pack' },
+      { text: 'Vietnam renewable energy landscape — FIT history, DPPA status, grid access, foreign ownership', tag: 'Policy Brief' },
+      { text: 'Auction clearing prices for solar: India vs Australia vs Philippines — with trend chart', tag: 'Chart + Table' },
     ],
   },
 ];
@@ -223,34 +236,43 @@ function ComparePageContent() {
         <div className="flex-1 overflow-y-auto">
           {messages.length === 0 ? (
             /* ── Welcome screen ── */
-            <div className="flex flex-col items-center justify-center h-full px-4 py-6">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center mb-4 shadow-lg">
-                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+            <div className="flex flex-col items-center px-4 pt-8 pb-6">
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-md">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h1 className="text-xl font-bold text-gray-900">AI Energy Analyst</h1>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1 text-center">AI Energy Analyst</h1>
-              <p className="text-gray-500 mb-6 max-w-md text-sm text-center">
-                Ask any energy question — get benchmark reports, policy briefs, and project guidance packs
-                with cited sources from IRENA, Lazard, BNEF, IFC &amp; more.
+              <p className="text-gray-400 mb-8 text-xs text-center max-w-lg">
+                Benchmark reports, policy briefs, project guidance packs — cited from IRENA, Lazard, BNEF, IFC &amp; more.
               </p>
-              <div className="max-w-4xl w-full space-y-5">
+
+              {/* Prompt grid */}
+              <div className="max-w-5xl w-full space-y-6">
                 {SAMPLE_SECTIONS.map((section) => {
                   const sc = SECTION_COLORS[section.color];
                   return (
                     <div key={section.label}>
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-2.5">
                         <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-                        <span className={`text-[11px] font-semibold uppercase tracking-wider ${sc.label}`}>{section.label}</span>
+                        <span className={`text-[10px] font-semibold uppercase tracking-widest ${sc.label}`}>{section.label}</span>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {section.questions.map((q) => (
                           <button
                             key={q.text}
                             onClick={() => sendMessage(q.text)}
-                            className={`group text-left text-sm px-4 py-3 rounded-xl border border-gray-200 text-gray-700 transition-all duration-150 hover:shadow-sm ${sc.hover}`}
+                            className={`group flex items-start justify-between gap-3 text-left text-[13px] leading-snug px-4 py-2.5 rounded-lg border border-gray-150 text-gray-600 transition-all duration-150 hover:shadow-sm ${sc.hover}`}
                           >
-                            {q.text}
+                            <span className="flex-1 min-w-0">{q.text}</span>
+                            {q.tag && (
+                              <span className={`flex-shrink-0 mt-0.5 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border ${TAG_STYLES[q.tag] ?? 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                                {q.tag}
+                              </span>
+                            )}
                           </button>
                         ))}
                       </div>
