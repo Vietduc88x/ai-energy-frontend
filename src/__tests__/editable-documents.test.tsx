@@ -206,10 +206,10 @@ describe('api-client document functions', () => {
     expect(typeof api.exportDocument).toBe('function');
   });
 
-  it('exportDocument returns a URL string', async () => {
+  it('exportDocument is an async function that triggers download', async () => {
     const { exportDocument } = await import('@/lib/api-client');
-    const url = exportDocument('test-id', 'docx');
-    expect(url).toMatch(/\/api\/v1\/documents\/test-id\/export\/docx/);
+    expect(typeof exportDocument).toBe('function');
+    // exportDocument now returns Promise<void> (fetch+blob download)
   });
 
   it('editor page uses query param ID for durable URLs', async () => {

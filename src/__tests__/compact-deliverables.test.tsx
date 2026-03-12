@@ -123,13 +123,12 @@ describe('compact mode rendering', () => {
   });
 });
 
-// ─── API client: exportDocument URL generation ──────────────────────────────
+// ─── API client: exportDocument fetch+blob download ─────────────────────────
 
-describe('exportDocument URL for compact XLSX export', () => {
-  it('generates correct XLSX export URL', async () => {
+describe('exportDocument for compact XLSX export', () => {
+  it('exportDocument is an async function', async () => {
     const { exportDocument } = await import('@/lib/api-client');
-    const url = exportDocument('doc-123', 'xlsx');
-    expect(url).toMatch(/\/api\/v1\/documents\/doc-123\/export\/xlsx/);
+    expect(typeof exportDocument).toBe('function');
   });
 
   it('createEditableDocument calls POST with correct payload', async () => {

@@ -64,9 +64,12 @@ export function DocumentEditorShell({ document: doc, children }: DocumentEditorS
     return () => window.removeEventListener('keydown', handler);
   }, [handleSave]);
 
-  const handleExport = (format: 'docx' | 'xlsx') => {
-    const url = exportDocument(doc.id, format);
-    window.open(url, '_blank');
+  const handleExport = async (format: 'docx' | 'xlsx') => {
+    try {
+      await exportDocument(doc.id, format);
+    } catch (err: any) {
+      alert(err?.message ?? 'Export failed');
+    }
   };
 
   const typeLabels: Record<string, string> = {

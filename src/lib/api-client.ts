@@ -320,10 +320,28 @@ export function getDocumentVersion(id: string, versionNo: number) {
   return apiFetch<{ id: string; versionNo: number; contentJson: Record<string, unknown>; createdAt: string }>(`/api/v1/documents/${id}/versions/${versionNo}`);
 }
 
-export function exportDocument(id: string, format: 'docx' | 'xlsx'): string {
-  // Returns the URL for direct download (browser will handle the download)
-  const base = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_API_URL || '') : '';
-  return `${base}/api/v1/documents/${id}/export/${format}`;
+/** Fetch export file as blob and trigger browser download. */
+export async function exportDocument(id: string, format: 'docx' | 'xlsx'): Promise<void> {
+  const res = await fetch(`/api/v1/documents/${id}/export/${format}`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(body.error ?? `Export failed (${res.status})`);
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get('Content-Disposition') ?? '';
+  const filenameMatch = disposition.match(/filename="?([^"]+)"?/);
+  const filename = filenameMatch?.[1] ?? `export.${format}`;
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 // ─── Chat API (SSE streaming) ────────────────────────────────────────────────

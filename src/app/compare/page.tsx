@@ -543,9 +543,8 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
         contentJson: { ...reportData, title },
       });
       if (created?.id) {
-        // Trigger XLSX download
-        const url = exportDocumentUrl(created.id, 'xlsx');
-        window.open(url, '_blank');
+        // Trigger XLSX download via authenticated fetch + blob
+        await exportDocumentUrl(created.id, 'xlsx');
       } else {
         setReportError(error?.message ?? 'Failed to export');
       }
