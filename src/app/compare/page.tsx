@@ -14,6 +14,7 @@ import { ChecklistTable } from '@/components/deliverables/ChecklistTable';
 import { DocumentRequestMatrix } from '@/components/deliverables/DocumentRequestMatrix';
 import { RiskMatrix } from '@/components/deliverables/RiskMatrix';
 import { ProjectTimeline } from '@/components/deliverables/ProjectTimeline';
+import { EpcQuestions } from '@/components/deliverables/EpcQuestions';
 
 interface Message {
   id: string;
@@ -232,8 +233,14 @@ function ComparePageContent() {
             </div>
           ) : (
             /* ── Chat messages ── */
-            <div className="max-w-3xl mx-auto pt-4 pb-4 px-4">
-              {messages.map((msg) => (
+            <div className="max-w-5xl mx-auto pt-4 pb-4 px-4">
+              {messages.map((msg) => {
+                const hasWideContent = msg.role === 'assistant' && (
+                  (msg.meta?.visuals?.length ?? 0) > 0 ||
+                  !!msg.meta?.policyAnswer ||
+                  !!msg.meta?.guidancePack
+                );
+                return (
                 <div key={msg.id} className={`flex gap-3 mb-5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {/* Assistant avatar */}
                   {msg.role === 'assistant' && (
@@ -245,10 +252,12 @@ function ComparePageContent() {
                   )}
 
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                    className={`rounded-2xl text-sm leading-relaxed ${
                       msg.role === 'user'
-                        ? 'bg-gray-900 text-white'
-                        : 'bg-gray-50 text-gray-900 border border-gray-100'
+                        ? 'max-w-lg px-4 py-3 bg-gray-900 text-white'
+                        : hasWideContent
+                          ? 'flex-1 min-w-0 px-5 py-4 bg-gray-50/80 text-gray-900 border border-gray-200'
+                          : 'max-w-2xl px-4 py-3 bg-gray-50 text-gray-900 border border-gray-100'
                     }`}
                   >
                     {msg.loading && !msg.content ? (
@@ -273,7 +282,8 @@ function ComparePageContent() {
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
           )}
@@ -584,11 +594,15 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
               case 'document_request_matrix': return <DocumentRequestMatrix key={v.id} spec={s} metadata={m} />;
               case 'risk_matrix': return <RiskMatrix key={v.id} spec={s} metadata={m} />;
               case 'project_timeline': return <ProjectTimeline key={v.id} spec={s} metadata={m} />;
+              case 'epc_questions': return <EpcQuestions key={v.id} spec={s} metadata={m} />;
               default: return null;
             }
           })}
         </div>
       )}
+
+      {/* Text, actions, and footer — constrained width when deliverables widen the bubble */}
+      <div className={(meta?.visuals?.length ?? 0) > 0 || meta?.policyAnswer || meta?.guidancePack ? 'max-w-2xl' : ''}>
 
       {/* Narrative content from LLM — truncated in compact modes */}
       <div className="space-y-0.5">{renderContent(displayContent)}</div>
@@ -733,6 +747,8 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
           )}
         </div>
       )}
+
+      </div>{/* end constrained text/actions wrapper */}
     </div>
   );
 }
