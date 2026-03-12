@@ -1,6 +1,6 @@
 'use client';
 
-import { FamilyBadge } from './DeliverableBadge';
+import { FamilyBadge, DeliverableMetaFooter, type DeliverableMetadataProps } from './DeliverableBadge';
 
 export interface BenchmarkChartSpec {
   type: 'benchmark_chart';
@@ -31,7 +31,7 @@ const BAR_COLORS = [
   '#f43f5e', '#f97316', '#eab308',
 ];
 
-export function BenchmarkChart({ spec }: { spec: BenchmarkChartSpec }) {
+export function BenchmarkChart({ spec, metadata }: { spec: BenchmarkChartSpec; metadata?: DeliverableMetadataProps | null }) {
   const validSeries = spec.series.filter(
     s => s.valuePoint != null || (s.valueMin != null && s.valueMax != null),
   );
@@ -155,6 +155,8 @@ export function BenchmarkChart({ spec }: { spec: BenchmarkChartSpec }) {
           </div>
         )}
       </div>
+
+      <DeliverableMetaFooter meta={metadata} />
     </div>
   );
 }

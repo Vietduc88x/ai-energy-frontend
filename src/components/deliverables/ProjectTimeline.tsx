@@ -1,6 +1,6 @@
 'use client';
 
-import { FamilyBadge } from './DeliverableBadge';
+import { FamilyBadge, DeliverableMetaFooter, type DeliverableMetadataProps } from './DeliverableBadge';
 
 export interface ProjectTimelineSpec {
   type: 'project_timeline';
@@ -20,7 +20,7 @@ const STAGE_COLORS = [
   '#f43f5e', '#f97316', '#eab308',
 ];
 
-export function ProjectTimeline({ spec }: { spec: ProjectTimelineSpec }) {
+export function ProjectTimeline({ spec, metadata }: { spec: ProjectTimelineSpec; metadata?: DeliverableMetadataProps | null }) {
   if (spec.stages.length === 0) return null;
 
   const totalDays = Math.max(
@@ -87,6 +87,8 @@ export function ProjectTimeline({ spec }: { spec: ProjectTimelineSpec }) {
           })}
         </div>
       </div>
+
+      <DeliverableMetaFooter meta={metadata} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FamilyBadge } from './DeliverableBadge';
+import { FamilyBadge, DeliverableMetaFooter, type DeliverableMetadataProps } from './DeliverableBadge';
 
 export interface ChecklistTableSpec {
   type: 'checklist_table';
@@ -26,7 +26,7 @@ const SEVERITY_STYLES: Record<string, string> = {
   info: 'bg-blue-100 text-blue-600 border-blue-200',
 };
 
-export function ChecklistTable({ spec }: { spec: ChecklistTableSpec }) {
+export function ChecklistTable({ spec, metadata }: { spec: ChecklistTableSpec; metadata?: DeliverableMetadataProps | null }) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   if (spec.groups.length === 0) return null;
@@ -91,6 +91,8 @@ export function ChecklistTable({ spec }: { spec: ChecklistTableSpec }) {
           </div>
         ))}
       </div>
+
+      <DeliverableMetaFooter meta={metadata} />
     </div>
   );
 }

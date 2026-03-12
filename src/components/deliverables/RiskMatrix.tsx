@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FamilyBadge } from './DeliverableBadge';
+import { FamilyBadge, DeliverableMetaFooter, type DeliverableMetadataProps } from './DeliverableBadge';
 
 export interface RiskMatrixSpec {
   type: 'risk_matrix';
@@ -29,7 +29,7 @@ function riskColor(likelihood: string, impact: string): string {
   return CELL_COLORS[i][l];
 }
 
-export function RiskMatrix({ spec }: { spec: RiskMatrixSpec }) {
+export function RiskMatrix({ spec, metadata }: { spec: RiskMatrixSpec; metadata?: DeliverableMetadataProps | null }) {
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
 
   if (spec.items.length === 0) return null;
@@ -141,6 +141,8 @@ export function RiskMatrix({ spec }: { spec: RiskMatrixSpec }) {
           })}
         </div>
       </div>
+
+      <DeliverableMetaFooter meta={metadata} />
     </div>
   );
 }

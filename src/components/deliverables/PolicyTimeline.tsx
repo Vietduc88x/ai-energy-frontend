@@ -1,6 +1,6 @@
 'use client';
 
-import { FamilyBadge } from './DeliverableBadge';
+import { FamilyBadge, DeliverableMetaFooter, type DeliverableMetadataProps } from './DeliverableBadge';
 
 export interface PolicyTimelineSpec {
   type: 'policy_timeline';
@@ -23,7 +23,7 @@ const SEVERITY_COLORS = {
   low: 'bg-gray-400',
 };
 
-export function PolicyTimeline({ spec }: { spec: PolicyTimelineSpec }) {
+export function PolicyTimeline({ spec, metadata }: { spec: PolicyTimelineSpec; metadata?: DeliverableMetadataProps | null }) {
   if (spec.events.length === 0) return null;
 
   return (
@@ -73,6 +73,8 @@ export function PolicyTimeline({ spec }: { spec: PolicyTimelineSpec }) {
           </div>
         </div>
       </div>
+
+      <DeliverableMetaFooter meta={metadata} />
     </div>
   );
 }

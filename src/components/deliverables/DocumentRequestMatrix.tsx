@@ -1,6 +1,6 @@
 'use client';
 
-import { FamilyBadge } from './DeliverableBadge';
+import { FamilyBadge, DeliverableMetaFooter, type DeliverableMetadataProps } from './DeliverableBadge';
 
 export interface DocumentRequestMatrixSpec {
   type: 'document_request_matrix';
@@ -21,7 +21,7 @@ const PRIORITY_STYLES: Record<string, string> = {
   low: 'bg-gray-100 text-gray-600',
 };
 
-export function DocumentRequestMatrix({ spec }: { spec: DocumentRequestMatrixSpec }) {
+export function DocumentRequestMatrix({ spec, metadata }: { spec: DocumentRequestMatrixSpec; metadata?: DeliverableMetadataProps | null }) {
   if (spec.rows.length === 0) return null;
 
   // Group rows by category for visual grouping
@@ -75,6 +75,8 @@ export function DocumentRequestMatrix({ spec }: { spec: DocumentRequestMatrixSpe
           </tbody>
         </table>
       </div>
+
+      <DeliverableMetaFooter meta={metadata} />
     </div>
   );
 }

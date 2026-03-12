@@ -63,3 +63,46 @@ export function DeliverableMetaLine({
     </div>
   );
 }
+
+/** Standardized metadata from backend DeliverableMetadata. */
+export interface DeliverableMetadataProps {
+  deliverableFamily?: string | null;
+  confidence?: ConfidenceLevel | null;
+  lastChecked?: string | null;
+  sourceCount?: number | null;
+  caveat?: string | null;
+  generatedAt?: string | null;
+}
+
+/**
+ * Compact metadata footer for any deliverable visual.
+ * Shows source count, confidence, last-checked date, and caveat.
+ * Designed to be appended inside deliverable cards without adding clutter.
+ */
+export function DeliverableMetaFooter({ meta }: { meta?: DeliverableMetadataProps | null }) {
+  if (!meta) return null;
+
+  const parts: string[] = [];
+
+  if (meta.sourceCount != null && meta.sourceCount > 0) {
+    parts.push(`${meta.sourceCount} source${meta.sourceCount !== 1 ? 's' : ''}`);
+  }
+
+  if (meta.lastChecked) {
+    const d = new Date(meta.lastChecked);
+    parts.push(`Checked ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`);
+  }
+
+  const hasContent = parts.length > 0 || meta.confidence || meta.caveat;
+  if (!hasContent) return null;
+
+  return (
+    <div className="px-4 py-2 border-t border-gray-100 flex flex-wrap items-center gap-2 text-[10px] text-gray-400">
+      {meta.confidence && <ConfidenceBadge level={meta.confidence} />}
+      {parts.length > 0 && <span>{parts.join(' · ')}</span>}
+      {meta.caveat && (
+        <span className="text-amber-500 italic">{meta.caveat}</span>
+      )}
+    </div>
+  );
+}

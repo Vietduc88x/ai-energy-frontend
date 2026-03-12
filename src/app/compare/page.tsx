@@ -576,13 +576,14 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
         <div className="mb-3 space-y-3">
           {meta.visuals.map((v) => {
             const s = v.spec as any;
+            const m = (v as any).metadata ?? null;
             switch (v.visualType) {
-              case 'benchmark_chart': return <BenchmarkChart key={v.id} spec={s} />;
-              case 'policy_timeline': return <PolicyTimeline key={v.id} spec={s} />;
-              case 'checklist_table': return <ChecklistTable key={v.id} spec={s} />;
-              case 'document_request_matrix': return <DocumentRequestMatrix key={v.id} spec={s} />;
-              case 'risk_matrix': return <RiskMatrix key={v.id} spec={s} />;
-              case 'project_timeline': return <ProjectTimeline key={v.id} spec={s} />;
+              case 'benchmark_chart': return <BenchmarkChart key={v.id} spec={s} metadata={m} />;
+              case 'policy_timeline': return <PolicyTimeline key={v.id} spec={s} metadata={m} />;
+              case 'checklist_table': return <ChecklistTable key={v.id} spec={s} metadata={m} />;
+              case 'document_request_matrix': return <DocumentRequestMatrix key={v.id} spec={s} metadata={m} />;
+              case 'risk_matrix': return <RiskMatrix key={v.id} spec={s} metadata={m} />;
+              case 'project_timeline': return <ProjectTimeline key={v.id} spec={s} metadata={m} />;
               default: return null;
             }
           })}
