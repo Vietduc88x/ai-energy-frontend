@@ -29,30 +29,30 @@ const SAMPLE_SECTIONS = [
     label: 'Cost Benchmarks',
     color: 'emerald' as const,
     questions: [
-      { text: 'What is the LCOE of solar PV in 2024?' },
-      { text: 'Compare CAPEX for onshore vs offshore wind' },
-      { text: 'Battery storage cost trends 2020-2024' },
-      { text: 'Green hydrogen production cost by region' },
+      { text: 'Compare solar PV LCOE across IRENA, Lazard, and BNEF — why do they disagree?' },
+      { text: 'What is the CAPEX breakdown for a 100 MW onshore wind farm?' },
+      { text: 'Battery storage cost trends 2020-2024 — is 4-hour BESS bankable yet?' },
+      { text: 'Compare offshore wind LCOE: Europe vs Asia-Pacific' },
     ],
   },
   {
     label: 'Policy & Regulation',
     color: 'blue' as const,
     questions: [
-      { text: 'Current solar incentives in India' },
-      { text: 'EU renewable energy targets for 2030' },
-      { text: 'Permitting timeline for wind in Australia' },
-      { text: 'US IRA tax credits for clean energy' },
+      { text: 'Can foreign investors do direct PPAs in Vietnam now?' },
+      { text: 'What solar incentives are available in India for utility-scale projects?' },
+      { text: 'Permitting timeline and grid connection process for wind in Australia' },
+      { text: 'How does the Philippines Green Energy Auction Program work?' },
     ],
   },
   {
-    label: 'Project Guidelines',
+    label: 'Project Guidance',
     color: 'amber' as const,
     questions: [
-      { text: 'TDD checklist for solar PV feasibility' },
-      { text: 'EPC contract review questions' },
-      { text: 'Risk register for hybrid PV + BESS' },
-      { text: 'Document request list for procurement' },
+      { text: 'TDD checklist for 50 MW solar PV feasibility in India' },
+      { text: 'EPC contract review questions for a solar + BESS project' },
+      { text: 'Risk register for hybrid PV + BESS in Philippines' },
+      { text: 'Document request list for solar procurement stage' },
     ],
   },
 ];
@@ -203,8 +203,8 @@ function ComparePageContent() {
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-1 text-center">AI Energy Analyst</h1>
               <p className="text-gray-500 mb-6 max-w-md text-sm text-center">
-                Compare costs, track policies, and generate project checklists
-                — powered by IRENA, Lazard, BNEF, EIA, NREL &amp; IFC.
+                Ask any energy question — get benchmark reports, policy briefs, and project guidance packs
+                with cited sources from IRENA, Lazard, BNEF, IFC &amp; more.
               </p>
               <div className="max-w-2xl w-full space-y-5">
                 {SAMPLE_SECTIONS.map((section) => {

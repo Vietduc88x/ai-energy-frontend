@@ -21,15 +21,15 @@ const SAMPLE_CHATS: { label: string; color: string; messages: ChatMessage[] }[] 
     label: 'Cost Benchmark',
     color: 'emerald',
     messages: [
-      { role: 'user', text: 'What is the LCOE of solar PV in 2024?' },
+      { role: 'user', text: 'Compare solar PV LCOE across IRENA, Lazard, and BNEF — why do they disagree?' },
       {
         role: 'assistant',
-        text: 'Solar PV utility-scale LCOE in 2024 ranges from $24 to $96/MWh depending on region and methodology. Here\'s the cross-source comparison:',
+        text: 'Solar PV LCOE ranges from $24-$96/MWh across sources. The disagreement stems from methodology: IRENA uses weighted-average deployed costs while Lazard models unsubsidized greenfield projects. Here\'s the breakdown:',
         table: {
-          headers: ['Source', 'LCOE (USD/MWh)', 'Range', 'Methodology'],
+          headers: ['Source', 'LCOE (USD/MWh)', 'Range', 'Key Methodology'],
           rows: [
-            ['IRENA', '$36', '$28 - $50', 'Weighted average, global'],
-            ['Lazard', '$49', '$24 - $96', 'Unsubsidized, US-focused'],
+            ['IRENA', '$36', '$28 - $50', 'Weighted avg, global deployed'],
+            ['Lazard', '$49', '$24 - $96', 'Unsubsidized, US greenfield'],
             ['BNEF', '$41', '$30 - $55', 'Global benchmark, H2 2024'],
             ['EIA', '$33', '$29 - $42', 'US utility-scale, AEO 2024'],
           ],
@@ -40,23 +40,23 @@ const SAMPLE_CHATS: { label: string; color: string; messages: ChatMessage[] }[] 
     ],
   },
   {
-    label: 'Policy Tracker',
+    label: 'Policy Intelligence',
     color: 'blue',
     messages: [
-      { role: 'user', text: 'What are the latest solar policy changes in Vietnam?' },
+      { role: 'user', text: 'Can foreign investors do direct PPAs in Vietnam now? What changed?' },
       {
         role: 'assistant',
-        text: 'Vietnam\'s solar regulatory landscape shifted significantly in 2024-2025. The key changes affect FIT rates, DPPA eligibility, and PDP8 capacity allocations.',
+        text: 'Yes — Vietnam enacted the DPPA framework in late 2024, opening a direct procurement path for projects > 30 MW. Implementation rules took effect Feb 2025. Key changes:',
         table: {
-          headers: ['Policy Change', 'Effective Date', 'Impact'],
+          headers: ['Policy Change', 'Effective', 'Impact for Investors'],
           rows: [
-            ['FIT rate reduced to 7.09 c/kWh', 'Jan 2025', 'Lower project returns for rooftop'],
-            ['DPPA framework finalized', 'Nov 2024', 'Enables corporate PPAs > 1 MW'],
-            ['PDP8 solar cap: 12.8 GW by 2030', 'May 2023', 'Limits new utility-scale capacity'],
+            ['DPPA framework enacted', 'Nov 2024', 'Foreign investors can negotiate bilateral PPAs'],
+            ['Circular 02 implementation rules', 'Feb 2025', 'Defines eligible buyer/seller criteria'],
+            ['PDP8 solar cap: 12.8 GW by 2030', 'Active', 'Limits new utility-scale capacity'],
           ],
         },
         badge: 'policy_report',
-        sources: ['MOIT Decision 13/2023', 'DPPA Circular 2024', 'PDP8 Resolution'],
+        sources: ['Decision 80/2024', 'Circular 02/2025', 'PDP8 Resolution'],
       },
     ],
   },
@@ -64,17 +64,17 @@ const SAMPLE_CHATS: { label: string; color: string; messages: ChatMessage[] }[] 
     label: 'Project Guidance',
     color: 'amber',
     messages: [
-      { role: 'user', text: 'TDD checklist for 50 MW solar PV feasibility in India' },
+      { role: 'user', text: 'I\'m doing feasibility for a 50 MW solar PV in India — give me a TDD checklist' },
       {
         role: 'assistant',
-        text: 'Here\'s a structured technical due diligence checklist for a 50 MW solar PV feasibility study in India, based on IFC and World Bank guidelines:',
+        text: 'Here\'s your technical due diligence checklist for a 50 MW solar PV feasibility in India, sourced from IFC Performance Standards and World Bank guidelines:',
         table: {
-          headers: ['Category', 'Item', 'Priority'],
+          headers: ['Category', 'Check Item', 'Priority'],
           rows: [
-            ['Site Assessment', 'Solar irradiance data (GHI > 4.5 kWh/m\u00B2/day)', 'Critical'],
-            ['Site Assessment', 'Geotechnical survey & soil analysis', 'Critical'],
-            ['Grid Connection', 'Substation proximity & evacuation capacity', 'Critical'],
-            ['Land', 'Land lease / acquisition agreement', 'Critical'],
+            ['Resource', 'GHI data validated (> 4.5 kWh/m\u00B2/day)', 'Critical'],
+            ['Site', 'Geotechnical survey & topography', 'Critical'],
+            ['Grid', 'Substation capacity & evacuation plan', 'Critical'],
+            ['Land', 'Lease agreement / title clearance', 'Critical'],
             ['Permits', 'State electricity board approval', 'High'],
             ['Environmental', 'EIA clearance (if applicable)', 'High'],
             ['Financial', 'PPA / SECI bid confirmation', 'Critical'],
@@ -93,26 +93,26 @@ const USE_CASES = [
   {
     persona: 'Investment Analyst',
     problem: 'Spends 3+ hours manually comparing LCOE data across IRENA, Lazard, and BNEF reports',
-    solution: 'Ask one question, get a cross-source benchmark with conflict detection in 10 seconds',
-    query: 'Compare solar PV LCOE across all sources for 2024',
+    solution: 'One question returns a cross-source benchmark table with conflict detection — in 10 seconds',
+    query: 'Compare solar PV LCOE across IRENA, Lazard, and BNEF — why do they disagree?',
   },
   {
     persona: 'Project Developer',
-    problem: 'Misses a regulatory deadline because policy tracking is scattered across 12 government websites',
-    solution: 'Get a structured policy brief with key dates, implications, and action items',
-    query: 'What are current solar incentives in India?',
+    problem: 'Missed a DPPA deadline because policy updates were buried across government websites',
+    solution: 'Structured policy brief with key dates, who is affected, and what to check next',
+    query: 'Can foreign investors do direct PPAs in Vietnam now?',
   },
   {
     persona: 'Technical Advisor',
-    problem: 'Manually compiles DD checklists from IFC/World Bank PDFs for each new project',
-    solution: 'Generate a country-specific due diligence pack with checklist, risk register, and document request list',
-    query: 'TDD checklist for solar PV feasibility in India',
+    problem: 'Manually rebuilds DD checklists from IFC/World Bank PDFs for every new project',
+    solution: 'Country-specific due diligence pack with checklist, risk register, document list, and EPC review questions',
+    query: 'TDD checklist for 50 MW solar PV feasibility in India',
   },
   {
     persona: 'Lender / DFI',
-    problem: 'Reviews 200-page feasibility studies without a standard framework to compare projects',
-    solution: 'Edit AI-generated reports in-browser, export to DOCX/XLSX, share with stakeholders',
-    query: 'Risk register for hybrid PV + BESS project',
+    problem: 'Reviews 200-page feasibility reports without a standard risk framework to compare projects',
+    solution: 'Structured risk matrix with likelihood/impact scoring, editable in-browser, exportable to DOCX/XLSX',
+    query: 'Risk register for hybrid PV + BESS project in Philippines',
   },
 ];
 
@@ -207,6 +207,11 @@ export default function LandingPage() {
     setLoading(false);
   };
 
+  // Auto-load live demo on page load
+  useEffect(() => {
+    loadDemo();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Animate chat messages appearing one by one
   useEffect(() => {
     const chat = SAMPLE_CHATS[activeChat];
@@ -244,33 +249,22 @@ export default function LandingPage() {
           </span>
         </h1>
         <p className="text-base md:text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
-          Ask a question in plain English. Get a structured, cited answer from IRENA, Lazard, BNEF, and 10+ sources
-          — with benchmark reports, policy briefs, and due diligence packs you can edit and export.
+          Ask a question in plain English. Get a structured, cited answer from IRENA, Lazard, BNEF, and 10+ energy sources
+          — benchmark reports, policy briefs, and project guidance packs you can edit and export.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
           <Link
             href="/compare"
             className="px-6 py-3 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm touch-target transition-all shadow-sm hover:shadow-md"
           >
-            Try it free
+            Try it free — no signup required
           </Link>
-          <button
-            onClick={loadDemo}
-            disabled={loading}
+          <a
+            href="#live-demo"
             className="px-6 py-3 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium text-sm touch-target text-center transition-all"
           >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Loading...
-              </span>
-            ) : (
-              'See live demo'
-            )}
-          </button>
+            See live demo below
+          </a>
         </div>
       </section>
 
@@ -416,18 +410,20 @@ export default function LandingPage() {
       </section>
 
       {/* ── Live demo result ── */}
-      {loading && (
-        <section className="max-w-3xl mx-auto">
-          <CardSkeleton />
-        </section>
-      )}
-      {error && (
-        <section className="max-w-3xl mx-auto text-center">
-          <p className="text-sm text-red-600 bg-red-50 rounded-xl p-4">{error}</p>
-        </section>
-      )}
-      {demo && !loading && (
-        <section className="max-w-3xl mx-auto">
+      <section id="live-demo" className="max-w-3xl mx-auto scroll-mt-20">
+        <div className="text-center space-y-2 mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Live demo — real data, real AI</h2>
+          <p className="text-gray-500 text-sm">
+            This is a live API response, not a mockup. The same engine powers the chat interface.
+          </p>
+        </div>
+        {loading && <CardSkeleton />}
+        {error && (
+          <div className="text-center">
+            <p className="text-sm text-red-600 bg-red-50 rounded-xl p-4">{error}</p>
+          </div>
+        )}
+        {demo && !loading && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 md:p-6">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center">
@@ -435,20 +431,29 @@ export default function LandingPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h2 className="text-lg font-semibold text-gray-900">Live Demo: Solar LCOE Comparison</h2>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Solar PV LCOE — Cross-Source Comparison</h3>
+                <p className="text-xs text-gray-400">Query: &ldquo;What is the LCOE of solar PV in 2024?&rdquo;</p>
+              </div>
             </div>
             <ComparisonTable result={demo} />
-            <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+            <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                href="/compare?q=Compare%20solar%20PV%20LCOE%20across%20IRENA%2C%20Lazard%2C%20and%20BNEF"
+                className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-all shadow-sm hover:shadow"
+              >
+                Try this query yourself
+              </Link>
               <Link
                 href="/compare"
-                className="text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+                className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
               >
-                Ask your own question &rarr;
+                or ask your own question &rarr;
               </Link>
             </div>
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* ── Who is this for ── */}
       <section className="max-w-4xl mx-auto">
@@ -566,11 +571,11 @@ export default function LandingPage() {
       <section className="max-w-2xl mx-auto text-center">
         <div className="bg-gray-900 rounded-2xl p-8 md:p-10 shadow-lg">
           <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
-            Start with a question
+            Replace hours of PDF research with one question
           </h2>
           <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
-            No credit card required. 5 free queries per week. Ask about any energy cost, policy, or guideline
-            and get a structured, cited answer in seconds.
+            No credit card required. 5 free queries per week. Benchmark reports, policy briefs, and project guidance
+            packs — structured, cited, and exportable.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
