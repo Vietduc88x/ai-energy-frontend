@@ -33,16 +33,20 @@ const SAMPLE_SECTIONS = [
       { text: 'What is the CAPEX breakdown for a 100 MW onshore wind farm?' },
       { text: 'Battery storage cost trends 2020-2024 — is 4-hour BESS bankable yet?' },
       { text: 'Compare offshore wind LCOE: Europe vs Asia-Pacific' },
+      { text: 'Hybrid solar + BESS LCOE vs standalone solar — when does storage improve bankability?' },
+      { text: 'How has the global weighted-average cost of capital for renewables shifted since 2021?' },
     ],
   },
   {
     label: 'Policy & Regulation',
     color: 'blue' as const,
     questions: [
-      { text: 'Can foreign investors do direct PPAs in Vietnam now?' },
+      { text: 'Can foreign investors do direct PPAs in Vietnam now? What changed in the latest decree?' },
       { text: 'What solar incentives are available in India for utility-scale projects?' },
       { text: 'Permitting timeline and grid connection process for wind in Australia' },
       { text: 'How does the Philippines Green Energy Auction Program work?' },
+      { text: 'Compare renewable energy policy frameworks: Vietnam vs Philippines vs India' },
+      { text: 'What are the local content requirements for wind projects across Southeast Asia?' },
     ],
   },
   {
@@ -51,8 +55,30 @@ const SAMPLE_SECTIONS = [
     questions: [
       { text: 'TDD checklist for 50 MW solar PV feasibility in India' },
       { text: 'EPC contract review questions for a solar + BESS project' },
-      { text: 'Risk register for hybrid PV + BESS in Philippines' },
+      { text: 'Risk register for hybrid PV + BESS in Philippines — include construction, grid, and policy risks' },
       { text: 'Document request list for solar procurement stage' },
+      { text: 'Project development timeline for a 100 MW onshore wind farm from site selection to COD' },
+      { text: 'Due diligence framework for acquiring an operating solar portfolio in Southeast Asia' },
+    ],
+  },
+  {
+    label: 'Financial Modeling',
+    color: 'rose' as const,
+    questions: [
+      { text: 'What P50/P90 yield assumptions should lenders expect for a 50 MW PV plant in Rajasthan?' },
+      { text: 'Degradation rates and O&M cost benchmarks for utility-scale solar — IRENA vs BloombergNEF' },
+      { text: 'Revenue stacking strategies for a 100 MW / 400 MWh BESS in Australia' },
+      { text: 'Key financial model assumptions a lender will stress-test for a wind project in Vietnam' },
+    ],
+  },
+  {
+    label: 'Market Intelligence',
+    color: 'violet' as const,
+    questions: [
+      { text: 'Top 10 solar developers in Southeast Asia by installed capacity — who is winning?' },
+      { text: 'What is the global pipeline for green hydrogen projects and how does electrolyzer cost trend?' },
+      { text: 'Compare auction clearing prices for solar across India, Australia, and the Philippines' },
+      { text: 'Which countries in Asia-Pacific have binding renewable energy targets beyond 2030?' },
     ],
   },
 ];
@@ -61,6 +87,8 @@ const SECTION_COLORS = {
   emerald: { label: 'text-emerald-600', dot: 'bg-emerald-400', hover: 'hover:border-emerald-300 hover:bg-emerald-50/60' },
   blue: { label: 'text-blue-600', dot: 'bg-blue-400', hover: 'hover:border-blue-300 hover:bg-blue-50/60' },
   amber: { label: 'text-amber-600', dot: 'bg-amber-400', hover: 'hover:border-amber-300 hover:bg-amber-50/60' },
+  rose: { label: 'text-rose-600', dot: 'bg-rose-400', hover: 'hover:border-rose-300 hover:bg-rose-50/60' },
+  violet: { label: 'text-violet-600', dot: 'bg-violet-400', hover: 'hover:border-violet-300 hover:bg-violet-50/60' },
 };
 
 function ComparePageContent() {
