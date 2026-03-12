@@ -234,7 +234,7 @@ function ComparePageContent() {
                 Ask any energy question — get benchmark reports, policy briefs, and project guidance packs
                 with cited sources from IRENA, Lazard, BNEF, IFC &amp; more.
               </p>
-              <div className="max-w-2xl w-full space-y-5">
+              <div className="max-w-4xl w-full space-y-5">
                 {SAMPLE_SECTIONS.map((section) => {
                   const sc = SECTION_COLORS[section.color];
                   return (
