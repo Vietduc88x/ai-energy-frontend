@@ -1,6 +1,7 @@
 'use client';
 
 import type { PolicyAnswerEnvelope } from '@/lib/api-client';
+import { FamilyBadge, ConfidenceBadge, DeliverableMetaFooter } from './deliverables/DeliverableBadge';
 
 const CONFIDENCE_STYLES = {
   high: 'bg-emerald-100 text-emerald-800 border-emerald-200',
@@ -22,12 +23,8 @@ export function PolicyAnswer({ data }: { data: PolicyAnswerEnvelope }) {
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
-                Policy Briefing
-              </span>
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${CONFIDENCE_STYLES[data.confidence]}`}>
-                {data.confidence} confidence
-              </span>
+              <FamilyBadge family="report" />
+              <ConfidenceBadge level={data.confidence} />
             </div>
             <p className="text-sm font-bold text-gray-900 mt-1.5">
               {data.jurisdiction}{data.technology ? ` — ${data.technology}` : ''}
@@ -190,15 +187,15 @@ export function PolicyAnswer({ data }: { data: PolicyAnswerEnvelope }) {
           </div>
         )}
 
-        {/* Caveat */}
-        {data.caveat && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-            <p className="text-[11px] text-gray-500 leading-relaxed">
-              <span className="font-semibold text-gray-600">Note:</span> {data.caveat}
-            </p>
-          </div>
-        )}
       </div>
+
+      <DeliverableMetaFooter meta={{
+        deliverableFamily: 'report',
+        confidence: data.confidence,
+        lastChecked: data.lastChecked,
+        sourceCount: data.sources.length,
+        caveat: data.caveat ?? null,
+      }} />
     </div>
   );
 }

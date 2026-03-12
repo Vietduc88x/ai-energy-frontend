@@ -61,7 +61,8 @@ export type VisualType =
   | 'checklist_table'
   | 'document_request_matrix'
   | 'risk_matrix'
-  | 'project_timeline';
+  | 'project_timeline'
+  | 'epc_questions';
 
 const VISUAL_TO_FAMILY: Record<VisualType, DeliverableFamily> = {
   benchmark_chart: 'figure',
@@ -70,6 +71,7 @@ const VISUAL_TO_FAMILY: Record<VisualType, DeliverableFamily> = {
   document_request_matrix: 'matrix',
   risk_matrix: 'matrix',
   project_timeline: 'timeline',
+  epc_questions: 'checklist',
 };
 
 export function familyForVisualType(visualType: VisualType): DeliverableFamily {

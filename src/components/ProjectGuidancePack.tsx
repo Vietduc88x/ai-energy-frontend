@@ -1,6 +1,7 @@
 'use client';
 
 import type { ProjectGuidancePack } from '@/lib/api-client';
+import { FamilyBadge, DeliverableMetaFooter } from './deliverables/DeliverableBadge';
 
 // ─── Compact Caps ────────────────────────────────────────────────────────────
 // Pack card is a summary view — cap everything for scannability.
@@ -49,9 +50,7 @@ export function ProjectGuidanceCard({ data }: { data: ProjectGuidancePack }) {
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 border border-teal-200">
-                Project Guidance Pack
-              </span>
+              <FamilyBadge family="pack" />
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
                 {data.stage.replace(/_/g, ' ')}
               </span>
@@ -243,15 +242,13 @@ export function ProjectGuidanceCard({ data }: { data: ProjectGuidancePack }) {
           </div>
         )}
 
-        {/* Caveat */}
-        {data.caveat && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-            <p className="text-[11px] text-gray-500 leading-relaxed">
-              <span className="font-semibold text-gray-600">Note:</span> {data.caveat}
-            </p>
-          </div>
-        )}
       </div>
+
+      <DeliverableMetaFooter meta={{
+        deliverableFamily: 'pack',
+        sourceCount: data.sourceCoverage.guidelineCount,
+        caveat: data.caveat ?? null,
+      }} />
     </div>
   );
 }
