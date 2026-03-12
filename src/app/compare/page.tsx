@@ -24,84 +24,80 @@ interface Message {
   loading?: boolean;
 }
 
+// ─── Tag styling (subtle, uniform, smaller) ────────────────────────────────
+
 const TAG_STYLES: Record<string, string> = {
-  'Chart':          'bg-emerald-50 text-emerald-600 border-emerald-200',
-  'Table':          'bg-slate-50 text-slate-600 border-slate-200',
-  'Report':         'bg-blue-50 text-blue-600 border-blue-200',
-  'Policy Brief':   'bg-blue-50 text-blue-600 border-blue-200',
-  'Full Report':    'bg-indigo-50 text-indigo-600 border-indigo-200',
-  'Checklist':      'bg-amber-50 text-amber-600 border-amber-200',
-  'Risk Matrix':    'bg-rose-50 text-rose-600 border-rose-200',
-  'Matrix':         'bg-orange-50 text-orange-600 border-orange-200',
-  'Timeline':       'bg-violet-50 text-violet-600 border-violet-200',
-  'Gantt Timeline': 'bg-violet-50 text-violet-600 border-violet-200',
-  'Guidance Pack':  'bg-teal-50 text-teal-600 border-teal-200',
-  'Answer':         'bg-gray-50 text-gray-500 border-gray-200',
-  'Chart + Report': 'bg-emerald-50 text-emerald-600 border-emerald-200',
-  'Chart + Table':  'bg-emerald-50 text-emerald-600 border-emerald-200',
+  'Chart':          'bg-gray-50 text-gray-400 border-gray-200',
+  'Table':          'bg-gray-50 text-gray-400 border-gray-200',
+  'Report':         'bg-gray-50 text-gray-400 border-gray-200',
+  'Policy Brief':   'bg-gray-50 text-gray-400 border-gray-200',
+  'Full Report':    'bg-gray-50 text-gray-400 border-gray-200',
+  'Checklist':      'bg-gray-50 text-gray-400 border-gray-200',
+  'Risk Matrix':    'bg-gray-50 text-gray-400 border-gray-200',
+  'Matrix':         'bg-gray-50 text-gray-400 border-gray-200',
+  'Timeline':       'bg-gray-50 text-gray-400 border-gray-200',
+  'Gantt':          'bg-gray-50 text-gray-400 border-gray-200',
+  'Guidance Pack':  'bg-gray-50 text-gray-400 border-gray-200',
+  'Answer':         'bg-gray-50 text-gray-400 border-gray-200',
 };
 
-const SAMPLE_SECTIONS = [
+// ─── Prompt data: 3-level hierarchy ─────────────────────────────────────────
+
+const HERO_PROMPTS = [
+  { text: 'Compare solar LCOE across major sources', tag: 'Chart', icon: '📊', label: 'Benchmark' },
+  { text: 'What is the current solar policy in Vietnam?', tag: 'Policy Brief', icon: '📋', label: 'Policy' },
+  { text: 'Give me a TDD checklist for solar PV feasibility', tag: 'Checklist', icon: '✅', label: 'Guidance' },
+];
+
+const LEVEL2_SECTIONS = [
   {
-    label: 'Cost Benchmarks',
+    id: 'benchmark',
+    label: 'Benchmark',
     color: 'emerald' as const,
     questions: [
-      { text: 'Compare solar PV LCOE across IRENA, Lazard, and BNEF — why do they disagree?', tag: 'Chart' },
-      { text: 'CAPEX breakdown for a 100 MW onshore wind farm', tag: 'Table' },
-      { text: 'Battery storage cost trends 2020-2024 — is 4-hour BESS bankable yet?', tag: 'Chart + Report' },
+      { text: 'Compare solar LCOE across IRENA, Lazard, BNEF, EIA, and NREL', tag: 'Chart' },
+      { text: 'Battery storage cost trends 2020–2024', tag: 'Chart' },
       { text: 'Compare offshore wind LCOE: Europe vs Asia-Pacific', tag: 'Chart' },
+      { text: 'Auction clearing prices for solar: India vs Australia vs Philippines', tag: 'Chart' },
     ],
   },
   {
-    label: 'Policy & Regulation',
+    id: 'policy',
+    label: 'Policy',
     color: 'blue' as const,
     questions: [
-      { text: 'Can foreign investors do direct PPAs in Vietnam now?', tag: 'Policy Brief' },
-      { text: 'Permitting timeline and grid connection for wind in Australia', tag: 'Timeline' },
-      { text: 'Solar incentives available in India for utility-scale projects', tag: 'Table' },
-      { text: 'Compare renewable energy frameworks: Vietnam vs Philippines vs India', tag: 'Report' },
+      { text: 'What is the current solar policy in Vietnam?', tag: 'Policy Brief' },
+      { text: 'Can foreign investors do direct PPAs in Vietnam?', tag: 'Policy Brief' },
+      { text: 'Permitting timeline for wind in Australia', tag: 'Timeline' },
+      { text: 'Solar incentives in India for utility-scale projects', tag: 'Table' },
     ],
   },
   {
+    id: 'guidance',
     label: 'Project Guidance',
     color: 'amber' as const,
     questions: [
-      { text: 'TDD checklist for 50 MW solar PV feasibility in India', tag: 'Checklist' },
-      { text: 'EPC contract review questions for a solar + BESS project', tag: 'Checklist' },
-      { text: 'Risk register for hybrid PV + BESS in Philippines', tag: 'Risk Matrix' },
-      { text: 'Document request list for solar procurement stage', tag: 'Matrix' },
-      { text: 'Development timeline for 100 MW onshore wind — site selection to COD', tag: 'Gantt Timeline' },
-      { text: 'Due diligence framework for acquiring a solar portfolio in Southeast Asia', tag: 'Guidance Pack' },
-    ],
-  },
-  {
-    label: 'Quick Answers',
-    color: 'rose' as const,
-    questions: [
-      { text: 'Typical capacity factor for onshore wind in Southeast Asia?', tag: 'Answer' },
-      { text: 'P50/P90 yield assumptions lenders expect for a 50 MW PV in Rajasthan?', tag: 'Answer' },
-      { text: 'Local content requirements for wind projects across Southeast Asia?', tag: 'Answer' },
-      { text: 'Which Asia-Pacific countries have binding RE targets beyond 2030?', tag: 'Answer' },
-    ],
-  },
-  {
-    label: 'Deep Research',
-    color: 'violet' as const,
-    questions: [
-      { text: 'Full benchmark report: solar + BESS LCOE across IRENA, Lazard, and BNEF', tag: 'Full Report' },
-      { text: 'Complete guidance pack for 50 MW solar PV in Philippines: TDD, risks, permits, documents', tag: 'Guidance Pack' },
-      { text: 'Vietnam renewable energy landscape — FIT history, DPPA status, grid access, foreign ownership', tag: 'Policy Brief' },
-      { text: 'Auction clearing prices for solar: India vs Australia vs Philippines — with trend chart', tag: 'Chart + Table' },
+      { text: 'TDD checklist for solar PV feasibility', tag: 'Checklist' },
+      { text: 'EPC review questions for a solar + BESS project', tag: 'Checklist' },
+      { text: 'Risk register for hybrid PV + BESS', tag: 'Risk Matrix' },
+      { text: 'Document request list before lender TDD', tag: 'Matrix' },
+      { text: 'Project timeline for utility-scale wind', tag: 'Gantt' },
+      { text: 'Due diligence for acquiring a solar portfolio', tag: 'Guidance Pack' },
     ],
   },
 ];
 
+const MORE_PROMPTS = [
+  { text: 'Typical capacity factor for onshore wind in Southeast Asia?', tag: 'Answer' },
+  { text: 'P50/P90 yield assumptions lenders expect for a 50 MW PV project', tag: 'Answer' },
+  { text: 'Which Asia-Pacific countries have binding RE targets beyond 2030?', tag: 'Answer' },
+  { text: 'Full benchmark report: solar + BESS LCOE across IRENA, Lazard, and BNEF', tag: 'Full Report' },
+];
+
 const SECTION_COLORS = {
-  emerald: { label: 'text-emerald-600', dot: 'bg-emerald-400', hover: 'hover:border-emerald-300 hover:bg-emerald-50/60' },
-  blue: { label: 'text-blue-600', dot: 'bg-blue-400', hover: 'hover:border-blue-300 hover:bg-blue-50/60' },
-  amber: { label: 'text-amber-600', dot: 'bg-amber-400', hover: 'hover:border-amber-300 hover:bg-amber-50/60' },
-  rose: { label: 'text-rose-600', dot: 'bg-rose-400', hover: 'hover:border-rose-300 hover:bg-rose-50/60' },
-  violet: { label: 'text-violet-600', dot: 'bg-violet-400', hover: 'hover:border-violet-300 hover:bg-violet-50/60' },
+  emerald: { label: 'text-emerald-600', dot: 'bg-emerald-500', hover: 'hover:border-emerald-200 hover:bg-emerald-50/40' },
+  blue: { label: 'text-blue-600', dot: 'bg-blue-500', hover: 'hover:border-blue-200 hover:bg-blue-50/40' },
+  amber: { label: 'text-amber-600', dot: 'bg-amber-500', hover: 'hover:border-amber-200 hover:bg-amber-50/40' },
 };
 
 function ComparePageContent() {
@@ -238,7 +234,7 @@ function ComparePageContent() {
             /* ── Welcome screen ── */
             <div className="flex flex-col items-center px-4 pt-8 pb-6">
               {/* Header */}
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-3 mb-1.5">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-md">
                   <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -246,39 +242,78 @@ function ComparePageContent() {
                 </div>
                 <h1 className="text-xl font-bold text-gray-900">AI Energy Analyst</h1>
               </div>
-              <p className="text-gray-400 mb-8 text-xs text-center max-w-lg">
-                Benchmark reports, policy briefs, project guidance packs — cited from IRENA, Lazard, BNEF, IFC &amp; more.
+              <p className="text-gray-400 mb-6 text-xs text-center max-w-md">
+                Benchmark costs, track policy, prepare work products — cited from IRENA, Lazard, BNEF, IFC &amp; more.
               </p>
 
-              {/* Prompt grid */}
-              <div className="max-w-5xl w-full space-y-6">
-                {SAMPLE_SECTIONS.map((section) => {
-                  const sc = SECTION_COLORS[section.color];
-                  return (
-                    <div key={section.label}>
-                      <div className="flex items-center gap-2 mb-2.5">
-                        <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-                        <span className={`text-[10px] font-semibold uppercase tracking-widest ${sc.label}`}>{section.label}</span>
+              <div className="max-w-4xl w-full">
+
+                {/* ── LEVEL 1: Start Here — 3 hero prompts ── */}
+                <div className="mb-8" data-testid="start-here">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {HERO_PROMPTS.map((h) => (
+                      <button
+                        key={h.text}
+                        onClick={() => sendMessage(h.text)}
+                        className="group text-left rounded-xl border border-gray-200 bg-white px-5 py-4 transition-all duration-150 hover:border-emerald-300 hover:shadow-md hover:shadow-emerald-100/50"
+                      >
+                        <span className="text-lg mb-2 block">{h.icon}</span>
+                        <span className="block text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">{h.label}</span>
+                        <span className="block text-sm font-medium text-gray-800 leading-snug">{h.text}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── LEVEL 2: Primary sections — Benchmark / Policy / Project Guidance ── */}
+                <div className="space-y-5 mb-8" data-testid="primary-sections">
+                  {LEVEL2_SECTIONS.map((section) => {
+                    const sc = SECTION_COLORS[section.color];
+                    return (
+                      <div key={section.id} data-testid={`section-${section.id}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                          <span className={`text-[10px] font-semibold uppercase tracking-widest ${sc.label}`}>{section.label}</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          {section.questions.map((q) => (
+                            <button
+                              key={q.text}
+                              onClick={() => sendMessage(q.text)}
+                              className={`group flex items-center justify-between gap-2 text-left text-[13px] leading-snug px-3.5 py-2 rounded-lg border border-gray-100 text-gray-600 transition-all duration-150 ${sc.hover}`}
+                            >
+                              <span className="flex-1 min-w-0">{q.text}</span>
+                              {q.tag && (
+                                <span className={`flex-shrink-0 text-[8px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded ${TAG_STYLES[q.tag] ?? 'bg-gray-50 text-gray-400'}`}>
+                                  {q.tag}
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {section.questions.map((q) => (
-                          <button
-                            key={q.text}
-                            onClick={() => sendMessage(q.text)}
-                            className={`group flex items-start justify-between gap-3 text-left text-[13px] leading-snug px-4 py-2.5 rounded-lg border border-gray-150 text-gray-600 transition-all duration-150 hover:shadow-sm ${sc.hover}`}
-                          >
-                            <span className="flex-1 min-w-0">{q.text}</span>
-                            {q.tag && (
-                              <span className={`flex-shrink-0 mt-0.5 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border ${TAG_STYLES[q.tag] ?? 'bg-gray-50 text-gray-500 border-gray-200'}`}>
-                                {q.tag}
-                              </span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+
+                {/* ── LEVEL 3: More Ways to Ask — secondary ── */}
+                <div data-testid="more-ways">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] font-medium uppercase tracking-widest text-gray-300">More ways to ask</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {MORE_PROMPTS.map((q) => (
+                      <button
+                        key={q.text}
+                        onClick={() => sendMessage(q.text)}
+                        className="group flex items-center justify-between gap-2 text-left text-xs leading-snug px-3 py-1.5 rounded-lg text-gray-400 transition-colors hover:text-gray-600 hover:bg-gray-50"
+                      >
+                        <span className="flex-1 min-w-0">{q.text}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
               </div>
             </div>
           ) : (
@@ -579,11 +614,15 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
   const mode = meta?.deliverableMode ?? 'report'; // fallback to report (full) for old responses
   const showProductCards = mode === 'report' || mode === 'brief';
   const isCompactMode = mode === 'checklist' || mode === 'table';
+  const isVisualMode = mode === 'visual';
+  const hasVisuals = (meta?.visuals?.length ?? 0) > 0;
 
-  // In compact mode, truncate narrative to first ~3 sentences
-  const displayContent = isCompactMode && content.length > 0
-    ? truncateToSentences(content, 4)
-    : content;
+  // In compact/visual mode, truncate narrative to short caption
+  const displayContent = isVisualMode && content.length > 0
+    ? truncateToSentences(content, 2)
+    : isCompactMode && content.length > 0
+      ? truncateToSentences(content, 4)
+      : content;
 
   return (
     <div>
@@ -602,9 +641,9 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
       )}
 
       {/* Visual deliverables — rendered from structured specs */}
-      {meta?.visuals && meta.visuals.length > 0 && (
-        <div className="mb-3 space-y-3">
-          {meta.visuals.map((v) => {
+      {hasVisuals && (
+        <div className={`${isVisualMode ? 'mb-2' : 'mb-3'} space-y-3`}>
+          {meta!.visuals!.map((v) => {
             const s = v.spec as any;
             const m = (v as any).metadata ?? null;
             switch (v.visualType) {
@@ -622,10 +661,12 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
       )}
 
       {/* Text, actions, and footer — constrained width when deliverables widen the bubble */}
-      <div className={(meta?.visuals?.length ?? 0) > 0 || meta?.policyAnswer || meta?.guidancePack ? 'max-w-2xl' : ''}>
+      <div className={hasVisuals || meta?.policyAnswer || meta?.guidancePack ? 'max-w-2xl' : ''}>
 
-      {/* Narrative content from LLM — truncated in compact modes */}
-      <div className="space-y-0.5">{renderContent(displayContent)}</div>
+      {/* Narrative content — caption-only in visual mode, truncated in compact modes */}
+      <div className={isVisualMode && hasVisuals ? 'text-sm text-gray-500 space-y-0.5' : 'space-y-0.5'}>
+        {renderContent(displayContent)}
+      </div>
 
       {/* Error message for report/export actions */}
       {reportError && (
@@ -657,8 +698,10 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
         </div>
       )}
 
+      {/* Visual mode: no action bar — visual is the deliverable */}
+
       {/* Full mode action bar — edit buttons */}
-      {!isCompactMode && (meta?.policyAnswer || meta?.guidancePack) && (
+      {!isCompactMode && !isVisualMode && (meta?.policyAnswer || meta?.guidancePack) && (
         <div className="mt-3 flex flex-wrap gap-2">
           {meta?.guidancePack && (
             <button
@@ -704,9 +747,9 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
         </div>
       )}
 
-      {/* Footer: data points used */}
+      {/* Footer: data points used — compact in visual mode */}
       {meta && meta.factsUsed > 0 && (
-        <div className="mt-3 pt-2 border-t border-gray-200 flex items-center gap-1.5 text-xs text-gray-400">
+        <div className={`${isVisualMode ? 'mt-2 pt-1.5' : 'mt-3 pt-2'} border-t border-gray-200 flex items-center gap-1.5 text-xs text-gray-400`}>
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
