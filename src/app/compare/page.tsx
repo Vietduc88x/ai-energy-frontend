@@ -72,17 +72,49 @@ const LEVEL2_SECTIONS = [
       { text: 'Solar incentives in India for utility-scale projects', tag: 'Table' },
     ],
   },
+];
+
+const GUIDANCE_GROUPS = [
   {
-    id: 'guidance',
-    label: 'Project Guidance',
-    color: 'amber' as const,
-    questions: [
-      { text: 'TDD checklist for solar PV feasibility', tag: 'Checklist' },
+    label: 'Checklist',
+    prompts: [
+      { text: 'TDD checklist for solar PV feasibility in Vietnam', tag: 'Checklist' },
+      { text: 'TDD checklist for BESS construction', tag: 'Checklist' },
+    ],
+  },
+  {
+    label: 'Document Request',
+    prompts: [
+      { text: 'Document request list for lender due diligence — solar PV', tag: 'Matrix' },
+      { text: 'Document submission plan for wind farm development in Australia', tag: 'Matrix' },
+    ],
+  },
+  {
+    label: 'EPC Review',
+    prompts: [
       { text: 'EPC review questions for a solar + BESS project', tag: 'Checklist' },
-      { text: 'Risk register for hybrid PV + BESS', tag: 'Risk Matrix' },
-      { text: 'Document request list before lender TDD', tag: 'Matrix' },
-      { text: 'Project timeline for utility-scale wind', tag: 'Gantt' },
-      { text: 'Due diligence for acquiring a solar portfolio', tag: 'Guidance Pack' },
+      { text: 'EPC contractor evaluation for offshore wind', tag: 'Checklist' },
+    ],
+  },
+  {
+    label: 'Risk Register',
+    prompts: [
+      { text: 'Risk register for hybrid PV + BESS at construction stage', tag: 'Risk Matrix' },
+      { text: 'Top project risks for utility-scale solar in the Philippines', tag: 'Risk Matrix' },
+    ],
+  },
+  {
+    label: 'Stage Guidance',
+    prompts: [
+      { text: 'Project timeline for utility-scale wind development', tag: 'Gantt' },
+      { text: 'Stage guidance for BESS feasibility', tag: 'Guidance Pack' },
+    ],
+  },
+  {
+    label: 'Full Guidance Pack',
+    prompts: [
+      { text: 'Full guidance pack for solar PV feasibility in Vietnam', tag: 'Guidance Pack' },
+      { text: 'Due diligence pack for acquiring an operating wind farm', tag: 'Guidance Pack' },
     ],
   },
 ];
@@ -200,6 +232,11 @@ function ComparePageContent() {
     }
   };
 
+  const populateInput = (text: string) => {
+    setInput(text);
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  };
+
   const clearChat = () => {
     if (streaming) {
       controllerRef.current?.abort();
@@ -254,7 +291,7 @@ function ComparePageContent() {
                     {HERO_PROMPTS.map((h) => (
                       <button
                         key={h.text}
-                        onClick={() => sendMessage(h.text)}
+                        onClick={() => populateInput(h.text)}
                         className="group text-left rounded-xl border border-gray-200 bg-white px-5 py-4 transition-all duration-150 hover:border-emerald-300 hover:shadow-md hover:shadow-emerald-100/50"
                       >
                         <span className="text-lg mb-2 block">{h.icon}</span>
@@ -279,7 +316,7 @@ function ComparePageContent() {
                           {section.questions.map((q) => (
                             <button
                               key={q.text}
-                              onClick={() => sendMessage(q.text)}
+                              onClick={() => populateInput(q.text)}
                               className={`group flex items-center justify-between gap-2 text-left text-[13px] leading-snug px-3.5 py-2 rounded-lg border border-gray-100 text-gray-600 transition-all duration-150 ${sc.hover}`}
                             >
                               <span className="flex-1 min-w-0">{q.text}</span>
@@ -296,6 +333,38 @@ function ComparePageContent() {
                   })}
                 </div>
 
+                {/* ── Project Guidance — curated prompt groups ── */}
+                <div className="mb-8" data-testid="section-guidance">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-amber-600">Project Guidance</span>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mb-3 ml-3.5">
+                    Best results: include technology, project stage, and jurisdiction.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {GUIDANCE_GROUPS.map((group) => (
+                      <div key={group.label} className="space-y-1">
+                        <span className="block text-[10px] font-medium uppercase tracking-wide text-gray-400 px-1">{group.label}</span>
+                        {group.prompts.map((p) => (
+                          <button
+                            key={p.text}
+                            onClick={() => populateInput(p.text)}
+                            className="group flex items-center justify-between gap-2 w-full text-left text-[13px] leading-snug px-3.5 py-2 rounded-lg border border-gray-100 text-gray-600 transition-all duration-150 hover:border-amber-200 hover:bg-amber-50/40"
+                          >
+                            <span className="flex-1 min-w-0">{p.text}</span>
+                            {p.tag && (
+                              <span className={`flex-shrink-0 text-[8px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded ${TAG_STYLES[p.tag] ?? 'bg-gray-50 text-gray-400'}`}>
+                                {p.tag}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* ── LEVEL 3: More Ways to Ask — secondary ── */}
                 <div data-testid="more-ways">
                   <div className="flex items-center gap-2 mb-2">
@@ -305,7 +374,7 @@ function ComparePageContent() {
                     {MORE_PROMPTS.map((q) => (
                       <button
                         key={q.text}
-                        onClick={() => sendMessage(q.text)}
+                        onClick={() => populateInput(q.text)}
                         className="group flex items-center justify-between gap-2 text-left text-xs leading-snug px-3 py-1.5 rounded-lg text-gray-400 transition-colors hover:text-gray-600 hover:bg-gray-50"
                       >
                         <span className="flex-1 min-w-0">{q.text}</span>
