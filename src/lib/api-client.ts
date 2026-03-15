@@ -466,6 +466,22 @@ export interface CopilotPanel {
     }>;
   };
   hasChanges: boolean;
+  allPlanItems: Array<{
+    actionId: string;
+    action: string;
+    status: 'open' | 'done' | 'blocked' | 'deferred';
+    priority: number;
+    blocking: boolean;
+    workstream: string;
+    dependsOn: string[];
+    statusChangedAt: number;
+  }>;
+  recentChanges: Array<{
+    type: 'plan' | 'evidence' | 'gate' | 'blocker';
+    description: string;
+    detail: string;
+    turn: number;
+  }>;
 }
 
 export interface ChatMeta {

@@ -32,11 +32,18 @@ const SEVERITY_STYLE: Record<string, string> = {
   minor:       'text-gray-500',
 };
 
-const PLAN_STATUS_STYLE: Record<string, { dot: string; text: string }> = {
-  open:     { dot: 'bg-blue-400',    text: 'text-blue-600' },
-  done:     { dot: 'bg-emerald-500', text: 'text-emerald-600' },
-  blocked:  { dot: 'bg-red-400',     text: 'text-red-600' },
-  deferred: { dot: 'bg-gray-400',    text: 'text-gray-500' },
+const PLAN_STATUS_STYLE: Record<string, { dot: string; text: string; label: string }> = {
+  open:     { dot: 'bg-blue-400',    text: 'text-blue-600',    label: 'Open' },
+  done:     { dot: 'bg-emerald-500', text: 'text-emerald-600', label: 'Done' },
+  blocked:  { dot: 'bg-red-400',     text: 'text-red-600',     label: 'Blocked' },
+  deferred: { dot: 'bg-gray-400',    text: 'text-gray-500',    label: 'Deferred' },
+};
+
+const CHANGE_TYPE_ICON: Record<string, { icon: string; color: string }> = {
+  plan:     { icon: '▸', color: 'text-blue-500' },
+  evidence: { icon: '◆', color: 'text-amber-500' },
+  gate:     { icon: '◇', color: 'text-violet-500' },
+  blocker:  { icon: '✓', color: 'text-emerald-500' },
 };
 
 const EVIDENCE_CYCLE: EvidenceStatus[] = ['missing', 'partial', 'provided'];
@@ -55,7 +62,7 @@ export interface ProjectWorkspaceProps {
 
 // ─── Sections ────────────────────────────────────────────────────────────────
 
-type Section = 'progress' | 'evidence' | 'gates' | 'blockers';
+type Section = 'plan' | 'evidence' | 'gates' | 'blockers' | 'changes';
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -68,10 +75,11 @@ export function ProjectWorkspace({
   onMarkActionDone,
   onClose,
 }: ProjectWorkspaceProps) {
-  const { context, progress, evidence, gates, blockers } = panel;
+  const { context, progress, evidence, gates, blockers, allPlanItems, recentChanges } = panel;
   const [expandedSections, setExpandedSections] = useState<Set<Section>>(
-    new Set(['progress', 'evidence', 'gates', 'blockers']),
+    new Set(['plan', 'evidence', 'gates', 'blockers', 'changes']),
   );
+  const [planFilter, setPlanFilter] = useState<'all' | 'open' | 'done' | 'blocked' | 'deferred'>('all');
 
   const toggleSection = (s: Section) => {
     setExpandedSections(prev => {
@@ -83,6 +91,10 @@ export function ProjectWorkspace({
 
   const otherContexts = recentContexts?.filter(c => c.id !== context.projectContextId) ?? [];
   const progressPct = progress.planTotal > 0 ? Math.round((progress.planDone / progress.planTotal) * 100) : 0;
+
+  // Full plan items with optional filtering
+  const planItems = allPlanItems ?? [];
+  const filteredPlan = planFilter === 'all' ? planItems : planItems.filter(p => p.status === planFilter);
 
   return (
     <div className="flex flex-col h-full bg-white border-l border-gray-200 w-[340px] flex-shrink-0" data-testid="project-workspace">
@@ -162,38 +174,112 @@ export function ProjectWorkspace({
           </div>
         </div>
 
-        {/* ── Plan items ── */}
-        {progress.planTotal > 0 && (
+        {/* ── Recent changes ── */}
+        {recentChanges && recentChanges.length > 0 && (
           <SectionAccordion
-            title="Plan"
-            count={`${progress.planDone}/${progress.planTotal}`}
-            expanded={expandedSections.has('progress')}
-            onToggle={() => toggleSection('progress')}
+            title="Recent Changes"
+            count={`${recentChanges.length}`}
+            expanded={expandedSections.has('changes')}
+            onToggle={() => toggleSection('changes')}
+            accent="blue"
           >
-            <div className="space-y-1">
-              {progress.nextActions.map((a, i) => {
-                const style = PLAN_STATUS_STYLE.open;
+            <div className="space-y-1.5" data-testid="recent-changes">
+              {recentChanges.slice(0, 8).map((c, i) => {
+                const style = CHANGE_TYPE_ICON[c.type] ?? CHANGE_TYPE_ICON.plan;
                 return (
-                  <div key={i} className="flex items-start gap-2 group">
-                    {onMarkActionDone ? (
-                      <button
-                        onClick={() => onMarkActionDone(a.actionId)}
-                        className="flex-shrink-0 w-4 h-4 mt-0.5 rounded border border-gray-300 hover:border-emerald-400 hover:bg-emerald-50 transition-colors"
-                        title="Mark done"
-                        data-testid="ws-mark-done-btn"
-                      />
-                    ) : (
-                      <span className={`flex-shrink-0 w-2 h-2 mt-1.5 rounded-full ${style.dot}`} />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs text-gray-700 leading-snug">{a.action}</span>
-                      {a.blocking && <span className="ml-1 text-[9px] text-red-400 font-semibold">CRITICAL</span>}
+                  <div key={i} className="flex items-start gap-1.5 text-xs" data-testid="change-item">
+                    <span className={`flex-shrink-0 mt-0.5 ${style.color} font-bold`}>{style.icon}</span>
+                    <div className="flex-1 min-w-0 leading-snug">
+                      <span className="text-gray-600 truncate block">{c.description}</span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-gray-400 font-medium">{c.detail}</span>
+                        <span className="text-[9px] text-gray-300">turn {c.turn}</span>
+                      </div>
                     </div>
                   </div>
                 );
               })}
-              {progress.planDeferred > 0 && (
-                <div className="text-[10px] text-gray-400 pt-1">{progress.planDeferred} deferred</div>
+            </div>
+          </SectionAccordion>
+        )}
+
+        {/* ── Full plan ── */}
+        {planItems.length > 0 && (
+          <SectionAccordion
+            title="Plan"
+            count={`${progress.planDone}/${progress.planTotal}`}
+            expanded={expandedSections.has('plan')}
+            onToggle={() => toggleSection('plan')}
+          >
+            {/* Filter tabs */}
+            <div className="flex gap-1 mb-2 flex-wrap" data-testid="plan-filters">
+              {(['all', 'open', 'blocked', 'done', 'deferred'] as const).map(f => {
+                const count = f === 'all' ? planItems.length
+                  : f === 'open' ? progress.planOpen
+                  : f === 'blocked' ? progress.planBlocked
+                  : f === 'done' ? progress.planDone
+                  : progress.planDeferred;
+                if (f !== 'all' && count === 0) return null;
+                return (
+                  <button
+                    key={f}
+                    onClick={() => setPlanFilter(f)}
+                    className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                      planFilter === f
+                        ? 'bg-gray-800 text-white border-gray-800'
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                    }`}
+                    data-testid={`plan-filter-${f}`}
+                  >
+                    {f === 'all' ? 'All' : PLAN_STATUS_STYLE[f]?.label ?? f} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="space-y-1.5" data-testid="full-plan-list">
+              {filteredPlan.map((p, i) => {
+                const style = PLAN_STATUS_STYLE[p.status] ?? PLAN_STATUS_STYLE.open;
+                const isDone = p.status === 'done';
+                const isActionable = p.status === 'open' && onMarkActionDone;
+                return (
+                  <div key={p.actionId || i} className="flex items-start gap-2 group" data-testid="plan-item">
+                    {isActionable ? (
+                      <button
+                        onClick={() => onMarkActionDone!(p.actionId)}
+                        className="flex-shrink-0 w-4 h-4 mt-0.5 rounded border border-gray-300 hover:border-emerald-400 hover:bg-emerald-50 transition-colors"
+                        title="Mark done"
+                        data-testid="ws-mark-done-btn"
+                      />
+                    ) : isDone ? (
+                      <span className="flex-shrink-0 w-4 h-4 mt-0.5 rounded bg-emerald-100 border border-emerald-300 flex items-center justify-center">
+                        <svg className="w-2.5 h-2.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </span>
+                    ) : (
+                      <span className={`flex-shrink-0 w-2.5 h-2.5 mt-1 rounded-full ${style.dot}`} />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <span className={`text-xs leading-snug ${isDone ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+                        {p.action}
+                      </span>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        {p.blocking && <span className="text-[9px] text-red-400 font-semibold">CRITICAL</span>}
+                        <span className={`text-[9px] font-medium ${style.text}`}>{style.label}</span>
+                        {p.workstream && <span className="text-[9px] text-gray-300">{p.workstream}</span>}
+                        {p.dependsOn.length > 0 && (
+                          <span className="text-[9px] text-gray-300" title={`Depends on: ${p.dependsOn.join(', ')}`}>
+                            ← {p.dependsOn.length} dep{p.dependsOn.length > 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredPlan.length === 0 && (
+                <div className="text-[10px] text-gray-400 py-1">No {planFilter} items</div>
               )}
             </div>
           </SectionAccordion>
@@ -316,10 +402,10 @@ function SectionAccordion({
   count: string;
   expanded: boolean;
   onToggle: () => void;
-  accent?: 'red';
+  accent?: 'red' | 'blue';
   children: React.ReactNode;
 }) {
-  const accentColor = accent === 'red' ? 'text-red-600' : 'text-gray-700';
+  const accentColor = accent === 'red' ? 'text-red-600' : accent === 'blue' ? 'text-blue-600' : 'text-gray-700';
   return (
     <div className="border border-gray-100 rounded-lg overflow-hidden">
       <button

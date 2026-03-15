@@ -62,6 +62,11 @@ function makePanel(overrides?: Partial<CopilotPanelData>): CopilotPanelData {
       ],
     },
     hasChanges: false,
+    allPlanItems: [
+      { actionId: 'yield-assessment', action: 'Commission energy yield assessment', status: 'open', priority: 1, blocking: true, workstream: 'Technical', dependsOn: [], statusChangedAt: 1 },
+      { actionId: 'review-permits', action: 'Review permits', status: 'open', priority: 1, blocking: true, workstream: 'Regulatory', dependsOn: [], statusChangedAt: 1 },
+    ],
+    recentChanges: [],
     ...overrides,
   };
 }

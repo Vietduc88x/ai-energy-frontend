@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useRef, useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from '@/hooks/use-session';
 import { streamChat, createEditableDocument, exportDocument as exportDocumentUrl, listContexts, getCopilotPanel as fetchCopilotPanel, updateEvidence, updatePlanItem, type ChatMessage, type ChatMeta, type ChatQuotaError, type DocumentType, type CopilotPanel as CopilotPanelData, type ContextSummary, type EvidenceStatus } from '@/lib/api-client';
@@ -134,9 +134,12 @@ const SECTION_COLORS = {
   amber: { label: 'text-amber-600', dot: 'bg-amber-500', hover: 'hover:border-amber-200 hover:bg-amber-50/40' },
 };
 
+const CONTEXT_STORAGE_KEY = 'ea-active-context-id';
+
 function ComparePageContent() {
   const session = useSession();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
@@ -154,6 +157,60 @@ function ComparePageContent() {
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   /** ID of the latest assistant message that has a copilot panel */
   const latestCopilotMsgRef = useRef<string | null>(null);
+
+  // ── Context persistence helpers ──
+  const persistContextId = useCallback((id: string | undefined) => {
+    if (id) {
+      try { localStorage.setItem(CONTEXT_STORAGE_KEY, id); } catch {}
+      // Update URL without navigation
+      const url = new URL(window.location.href);
+      url.searchParams.set('ctx', id);
+      window.history.replaceState({}, '', url.toString());
+    } else {
+      try { localStorage.removeItem(CONTEXT_STORAGE_KEY); } catch {}
+      const url = new URL(window.location.href);
+      url.searchParams.delete('ctx');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, []);
+
+  // Restore context on mount (URL param takes priority, then localStorage)
+  const contextRestored = useRef(false);
+  useEffect(() => {
+    if (contextRestored.current || !session.user) return;
+    contextRestored.current = true;
+
+    const urlCtx = searchParams.get('ctx');
+    const storedCtx = (() => { try { return localStorage.getItem(CONTEXT_STORAGE_KEY); } catch { return null; } })();
+    const restoreId = urlCtx || storedCtx;
+    if (!restoreId) return;
+
+    // Validate and load the saved context
+    (async () => {
+      const result = await fetchCopilotPanel(restoreId);
+      if (result.data?.panel && 'context' in result.data.panel && result.data.panel.visible) {
+        const panel = result.data.panel as CopilotPanelData;
+        setProjectContextId(restoreId);
+        persistContextId(restoreId);
+        // Create a synthetic message to hold the restored panel
+        const restoredMsg: Message = {
+          id: `restored-${restoreId}`,
+          role: 'assistant',
+          content: '',
+          meta: { factsUsed: 0, technologies: [], regions: [], metrics: [], copilotPanel: panel } as ChatMeta,
+        };
+        setMessages([restoredMsg]);
+        latestCopilotMsgRef.current = restoredMsg.id;
+        setWorkspaceOpen(true);
+        // Also load recent contexts for the switcher
+        const ctxResult = await listContexts();
+        if (ctxResult.data?.contexts) setRecentContexts(ctxResult.data.contexts);
+      } else {
+        // Stale context — clean up
+        persistContextId(undefined);
+      }
+    })();
+  }, [session.user, searchParams, persistContextId]);
 
   // Derive active copilot panel from the latest message that has one
   const activeCopilotPanel = (() => {
@@ -227,6 +284,7 @@ function ComparePageContent() {
         if (meta.copilotPanel && 'context' in meta.copilotPanel && meta.copilotPanel.visible) {
           const ctxId = meta.copilotPanel.context.projectContextId;
           setProjectContextId(ctxId);
+          persistContextId(ctxId);
           setNewProject(false);
           latestCopilotMsgRef.current = assistantMsg.id;
           // Fetch recent contexts for switcher
@@ -287,6 +345,7 @@ function ComparePageContent() {
     }
     setMessages([]);
     setProjectContextId(undefined);
+    persistContextId(undefined);
     setNewProject(false);
     setRecentContexts([]);
     latestCopilotMsgRef.current = null;
@@ -296,6 +355,7 @@ function ComparePageContent() {
 
   const handleSwitchContext = useCallback(async (contextId: string) => {
     setProjectContextId(contextId);
+    persistContextId(contextId);
     setNewProject(false);
     // Load panel for the switched context and update the latest copilot message
     const result = await fetchCopilotPanel(contextId);
@@ -307,12 +367,13 @@ function ComparePageContent() {
           : m
       ));
     }
-  }, []);
+  }, [persistContextId]);
 
   const handleNewContext = useCallback(() => {
     setProjectContextId(undefined);
+    persistContextId(undefined);
     setNewProject(true);
-  }, []);
+  }, [persistContextId]);
 
   const handleUpdateEvidence = useCallback(async (item: string, status: EvidenceStatus) => {
     if (!projectContextId) return;
