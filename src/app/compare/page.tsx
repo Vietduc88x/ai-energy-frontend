@@ -933,7 +933,7 @@ function AssistantMessage({ content, meta, recentContexts, onSwitchContext, onNe
       )}
 
       {/* Decision Brief card — structured decision-support output */}
-      {showProductCards && meta?.decisionBrief && (
+      {showProductCards && meta?.decisionBrief?.briefType && (
         <div className="mb-3">
           <DecisionBrief data={meta.decisionBrief} />
         </div>

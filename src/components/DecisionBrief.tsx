@@ -58,11 +58,20 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function DecisionBrief({ data }: { data: DecisionBriefData }) {
-  const hasBlockers = data.decisionBlockers.length > 0;
-  const hasEvidence = data.evidenceRequired.length > 0;
-  const hasActions = data.recommendedActions.length > 0;
-  const hasMissing = data.missingInformation.length > 0;
-  const hasWhatMatters = data.whatMatters.length > 0;
+  // Guard against partial/malformed data from SSE
+  const whatWeKnow = data.whatWeKnow ?? [];
+  const whatMatters = data.whatMatters ?? [];
+  const missingInformation = data.missingInformation ?? [];
+  const decisionBlockers = data.decisionBlockers ?? [];
+  const evidenceRequired = data.evidenceRequired ?? [];
+  const recommendedActions = data.recommendedActions ?? [];
+  const sourcesUsed = data.sourcesUsed ?? [];
+
+  const hasBlockers = decisionBlockers.length > 0;
+  const hasEvidence = evidenceRequired.length > 0;
+  const hasActions = recommendedActions.length > 0;
+  const hasMissing = missingInformation.length > 0;
+  const hasWhatMatters = whatMatters.length > 0;
 
   return (
     <div className="bg-white border border-orange-200 rounded-xl overflow-hidden">
@@ -85,11 +94,11 @@ export function DecisionBrief({ data }: { data: DecisionBriefData }) {
         </div>
 
         {/* What We Know */}
-        {data.whatWeKnow.length > 0 && (
+        {whatWeKnow.length > 0 && (
           <div>
             <SectionTitle>What We Know</SectionTitle>
             <ul className="space-y-1">
-              {data.whatWeKnow.map((item, i) => (
+              {whatWeKnow.map((item, i) => (
                 <li key={i} className="flex gap-2 text-xs text-gray-700">
                   <span className="flex-shrink-0 w-1 h-1 rounded-full bg-orange-400 mt-1.5" />
                   <span>{item}</span>
@@ -104,7 +113,7 @@ export function DecisionBrief({ data }: { data: DecisionBriefData }) {
           <div>
             <SectionTitle>What Matters</SectionTitle>
             <ul className="space-y-1">
-              {data.whatMatters.map((item, i) => (
+              {whatMatters.map((item, i) => (
                 <li key={i} className="flex gap-2 text-xs text-gray-800 font-medium">
                   <span className="flex-shrink-0 w-1 h-1 rounded-full bg-orange-500 mt-1.5" />
                   <span>{item}</span>
@@ -119,7 +128,7 @@ export function DecisionBrief({ data }: { data: DecisionBriefData }) {
           <div>
             <SectionTitle>Decision Blockers</SectionTitle>
             <div className="space-y-1.5">
-              {data.decisionBlockers.map((b, i) => (
+              {decisionBlockers.map((b, i) => (
                 <div key={i} className="flex items-start gap-2 text-xs">
                   <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${SEVERITY_STYLES[b.severity] || 'bg-gray-100 text-gray-600'}`}>
                     {b.severity}
@@ -139,7 +148,7 @@ export function DecisionBrief({ data }: { data: DecisionBriefData }) {
           <div>
             <SectionTitle>What Is Missing</SectionTitle>
             <ul className="space-y-1">
-              {data.missingInformation.map((item, i) => (
+              {missingInformation.map((item, i) => (
                 <li key={i} className="flex gap-2 text-xs text-gray-600">
                   <span className="flex-shrink-0 text-amber-500">?</span>
                   <span>{item}</span>
@@ -154,7 +163,7 @@ export function DecisionBrief({ data }: { data: DecisionBriefData }) {
           <div>
             <SectionTitle>Evidence Required</SectionTitle>
             <div className="space-y-1">
-              {data.evidenceRequired.map((e, i) => (
+              {evidenceRequired.map((e, i) => (
                 <div key={i} className="flex items-start gap-2 text-xs">
                   {e.gateBlocking && (
                     <span className="flex-shrink-0 px-1 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-600">GATE</span>
@@ -174,7 +183,7 @@ export function DecisionBrief({ data }: { data: DecisionBriefData }) {
           <div>
             <SectionTitle>Recommended Next Actions</SectionTitle>
             <div className="space-y-1">
-              {data.recommendedActions.map((a, i) => (
+              {recommendedActions.map((a, i) => (
                 <div key={i} className="flex items-start gap-2 text-xs">
                   <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                     a.blocking ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-500'
@@ -201,7 +210,7 @@ export function DecisionBrief({ data }: { data: DecisionBriefData }) {
             <div className="space-y-1.5 text-xs">
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">Support mechanism:</span>
-                <span className="text-gray-800 font-medium">{data.viabilityNote.supportMechanism.slice(0, 100)}</span>
+                <span className="text-gray-800 font-medium">{(data.viabilityNote.supportMechanism ?? '').slice(0, 100)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">Implementation clarity:</span>
@@ -210,10 +219,10 @@ export function DecisionBrief({ data }: { data: DecisionBriefData }) {
                 </span>
               </div>
               <p className="text-gray-600">{data.viabilityNote.bankabilityImplication}</p>
-              {data.viabilityNote.unresolvedRisks.length > 0 && (
+              {(data.viabilityNote.unresolvedRisks ?? []).length > 0 && (
                 <div>
                   <span className="text-gray-500">Unresolved risks: </span>
-                  <span className="text-amber-700">{data.viabilityNote.unresolvedRisks.join('; ')}</span>
+                  <span className="text-amber-700">{(data.viabilityNote.unresolvedRisks ?? []).join('; ')}</span>
                 </div>
               )}
             </div>
@@ -247,8 +256,8 @@ export function DecisionBrief({ data }: { data: DecisionBriefData }) {
       {/* Footer — Confidence + Sources */}
       <div className="px-4 py-2 border-t border-gray-100 space-y-1">
         <p className="text-[10px] text-gray-500">{data.confidenceNote}</p>
-        {data.sourcesUsed.length > 0 && (
-          <p className="text-[10px] text-gray-400">Sources: {data.sourcesUsed.join(', ')}</p>
+        {sourcesUsed.length > 0 && (
+          <p className="text-[10px] text-gray-400">Sources: {sourcesUsed.join(', ')}</p>
         )}
       </div>
     </div>
