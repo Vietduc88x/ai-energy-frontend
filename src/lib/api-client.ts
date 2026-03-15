@@ -389,7 +389,14 @@ export interface ProjectGuidancePack {
     cause?: string | null;
     impact?: string | null;
     mitigation?: string | null;
+    severity?: 'critical' | 'high' | 'medium' | 'low' | null;
   }>;
+  executiveSummary?: {
+    criticalItems: string[];
+    topBlocker: string | null;
+    topEvidenceNeed: string | null;
+    topRisk: string | null;
+  };
   sourceCoverage: { guidelineCount: number; sourcesUsed: string[] };
   citations: Array<{
     source: string;

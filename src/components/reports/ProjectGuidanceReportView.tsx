@@ -17,6 +17,12 @@ export interface ProjectGuidanceReportData {
     jurisdiction?: string | null;
   };
   summary: string;
+  executiveSummary?: {
+    criticalItems: string[];
+    topBlocker: string | null;
+    topEvidenceNeed: string | null;
+    topRisk: string | null;
+  };
   stageGuidance: string[];
   checklist: Array<{
     section: string;
@@ -35,6 +41,7 @@ export interface ProjectGuidanceReportData {
     impact: string;
     cause?: string | null;
     mitigation?: string | null;
+    severity?: 'critical' | 'high' | 'medium' | 'low' | null;
   }>;
   citations: Array<{ source: string; title: string; url?: string | null }>;
   caveat?: string | null;
@@ -42,6 +49,7 @@ export interface ProjectGuidanceReportData {
 
 const SEVERITY_STYLES: Record<string, string> = {
   critical: 'bg-red-100 text-red-700',
+  high: 'bg-orange-100 text-orange-700',
   medium: 'bg-amber-100 text-amber-700',
   low: 'bg-gray-100 text-gray-500',
 };
@@ -69,6 +77,8 @@ export function ProjectGuidanceReportView({ report, metadata }: { report: Projec
     if (!docsByCategory.has(row.category)) docsByCategory.set(row.category, []);
     docsByCategory.get(row.category)!.push(row);
   }
+
+  const exec = report.executiveSummary;
 
   return (
     <div className="report-container max-w-3xl mx-auto px-8 py-10 bg-white print:px-0 print:py-0 print:max-w-none">
@@ -101,8 +111,44 @@ export function ProjectGuidanceReportView({ report, metadata }: { report: Projec
         )}
       </div>
 
+      {/* ── Executive Summary ─────────────────────────────────────── */}
       <ReportSection title="Executive Summary">
-        <p className="text-sm text-gray-700 leading-relaxed">{report.summary}</p>
+        <p className="text-sm text-gray-700 leading-relaxed mb-3">{report.summary}</p>
+        {exec && (exec.criticalItems.length > 0 || exec.topBlocker || exec.topRisk) && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-2">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-red-700 mb-2">Critical Attention Items</h4>
+            {exec.criticalItems.length > 0 && (
+              <ul className="space-y-1.5 mb-3">
+                {exec.criticalItems.map((item, i) => (
+                  <li key={i} className="flex gap-2 text-xs text-red-800">
+                    <span className="text-red-500 flex-shrink-0 font-bold mt-0.5">!</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px]">
+              {exec.topBlocker && (
+                <div className="bg-white/60 rounded p-2">
+                  <span className="font-semibold text-red-700 block mb-0.5">Top Blocker</span>
+                  <span className="text-red-800">{exec.topBlocker}</span>
+                </div>
+              )}
+              {exec.topEvidenceNeed && (
+                <div className="bg-white/60 rounded p-2">
+                  <span className="font-semibold text-amber-700 block mb-0.5">Evidence Need</span>
+                  <span className="text-amber-800">{exec.topEvidenceNeed}</span>
+                </div>
+              )}
+              {exec.topRisk && (
+                <div className="bg-white/60 rounded p-2">
+                  <span className="font-semibold text-orange-700 block mb-0.5">Top Risk</span>
+                  <span className="text-orange-800">{exec.topRisk}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </ReportSection>
 
       {report.stageGuidance.length > 0 && (
@@ -127,8 +173,8 @@ export function ProjectGuidanceReportView({ report, metadata }: { report: Projec
                 <h4 className="text-xs font-semibold text-gray-800 mb-1.5">{section.section}</h4>
                 <div className="space-y-1">
                   {section.items.map((item, j) => (
-                    <div key={j} className="flex items-start gap-2 text-xs">
-                      <span className="text-gray-300 flex-shrink-0 mt-0.5">&#9744;</span>
+                    <div key={j} className={`flex items-start gap-2 text-xs ${item.severity === 'critical' ? 'text-red-800 font-medium' : ''}`}>
+                      <span className={`flex-shrink-0 mt-0.5 ${item.severity === 'critical' ? 'text-red-300' : 'text-gray-300'}`}>&#9744;</span>
                       <span className="text-gray-700 flex-1">{item.label}</span>
                       {item.severity && (
                         <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${SEVERITY_STYLES[item.severity] || ''}`}>
@@ -166,7 +212,7 @@ export function ProjectGuidanceReportView({ report, metadata }: { report: Projec
                       </td>
                     ) : null}
                     <td className="px-3 py-2 text-gray-700">{row.document}</td>
-                    <td className="px-3 py-2 text-gray-500 hidden sm:table-cell">{row.whyItMatters || '—'}</td>
+                    <td className="px-3 py-2 text-gray-500 hidden sm:table-cell">{row.whyItMatters || '\u2014'}</td>
                     <td className="px-3 py-2 text-center">
                       {row.priority && (
                         <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${PRIORITY_STYLES[row.priority] || ''}`}>
@@ -200,15 +246,20 @@ export function ProjectGuidanceReportView({ report, metadata }: { report: Projec
         </ReportSection>
       )}
 
-      {/* Risk Register */}
+      {/* Risk Register — split by severity */}
       {report.riskStarter.length > 0 && (
         <ReportSection title="Risk Register">
           <div className="space-y-2">
             {report.riskStarter.map((r, i) => (
-              <div key={i} className={`rounded-lg p-3 ${riskBg(r.likelihood, r.impact)}`}>
+              <div key={i} className={`rounded-lg p-3 ${r.severity === 'critical' || r.severity === 'high' ? 'border border-red-200 bg-red-50' : riskBg(r.likelihood, r.impact)}`}>
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-xs font-medium text-gray-900">{r.risk}</p>
                   <div className="flex gap-1 flex-shrink-0">
+                    {r.severity && (
+                      <span className={`text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded ${SEVERITY_STYLES[r.severity] || ''}`}>
+                        {r.severity}
+                      </span>
+                    )}
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/60 text-gray-600">
                       L:{r.likelihood[0].toUpperCase()}
                     </span>
