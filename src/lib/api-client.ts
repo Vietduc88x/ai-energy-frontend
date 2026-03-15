@@ -495,6 +495,7 @@ export interface ChatMeta {
   hasPolicyData?: boolean;
   hasGuidanceData?: boolean;
   visuals?: VisualDeliverable[];
+  decisionBrief?: import('@/components/DecisionBrief').DecisionBriefData;
   copilotPanel?: CopilotPanel | { visible: false };
 }
 

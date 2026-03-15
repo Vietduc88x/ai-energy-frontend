@@ -9,6 +9,7 @@ import { CopilotPanel } from '@/components/CopilotPanel';
 import { ProjectWorkspace } from '@/components/ProjectWorkspace';
 import { PolicyAnswer } from '@/components/PolicyAnswer';
 import { ProjectGuidanceCard } from '@/components/ProjectGuidancePack';
+import { DecisionBrief } from '@/components/DecisionBrief';
 import { QuotaModal } from '@/components/quota-modal';
 import { BenchmarkChart } from '@/components/deliverables/BenchmarkChart';
 import { PolicyTimeline } from '@/components/deliverables/PolicyTimeline';
@@ -928,6 +929,13 @@ function AssistantMessage({ content, meta, recentContexts, onSwitchContext, onNe
       {showProductCards && meta?.guidancePack && (
         <div className="mb-3">
           <ProjectGuidanceCard data={meta.guidancePack} />
+        </div>
+      )}
+
+      {/* Decision Brief card — structured decision-support output */}
+      {showProductCards && meta?.decisionBrief && (
+        <div className="mb-3">
+          <DecisionBrief data={meta.decisionBrief} />
         </div>
       )}
 

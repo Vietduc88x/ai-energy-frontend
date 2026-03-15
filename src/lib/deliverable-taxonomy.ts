@@ -26,6 +26,7 @@ export const DELIVERABLE_FAMILIES = [
   'matrix',
   'report',
   'pack',
+  'brief',
 ] as const;
 export type DeliverableFamily = (typeof DELIVERABLE_FAMILIES)[number];
 
@@ -40,6 +41,7 @@ export const FAMILY_LABELS: Record<DeliverableFamily, string> = {
   matrix: 'Matrix',
   report: 'Report',
   pack: 'Pack',
+  brief: 'Decision Brief',
 };
 
 export const FAMILY_COLORS: Record<DeliverableFamily, { bg: string; text: string; border: string }> = {
@@ -51,6 +53,7 @@ export const FAMILY_COLORS: Record<DeliverableFamily, { bg: string; text: string
   matrix:    { bg: 'bg-rose-50',    text: 'text-rose-700',    border: 'border-rose-200' },
   report:    { bg: 'bg-teal-50',    text: 'text-teal-700',    border: 'border-teal-200' },
   pack:      { bg: 'bg-gray-50',    text: 'text-gray-700',    border: 'border-gray-200' },
+  brief:     { bg: 'bg-orange-50',  text: 'text-orange-700',  border: 'border-orange-200' },
 };
 
 // ─── Visual Type → Family Mapping ───────────────────────────────────────────
@@ -91,6 +94,7 @@ export const FAMILY_EXPORT_FORMATS: Record<DeliverableFamily, ExportFormat[]> = 
   matrix:    ['xlsx', 'pdf', 'docx'],
   report:    ['pdf', 'docx'],
   pack:      ['pdf', 'docx', 'xlsx'],
+  brief:     ['pdf', 'docx'],
 };
 
 export function exportFormatsForFamily(family: DeliverableFamily): ExportFormat[] {
@@ -116,6 +120,7 @@ export const FAMILY_VERBOSITY: Record<DeliverableFamily, Verbosity> = {
   matrix:    'short',
   report:    'full',
   pack:      'bundled',
+  brief:     'short',
 };
 
 export function verbosityForFamily(family: DeliverableFamily): Verbosity {
@@ -139,6 +144,7 @@ export const FAMILY_UI_ACTIONS: Record<DeliverableFamily, UIAction[]> = {
   matrix:    ['export_xlsx', 'export_pdf', 'export_docx'],
   report:    ['print', 'export_pdf', 'export_docx'],
   pack:      ['export_pdf', 'export_docx', 'export_xlsx'],
+  brief:     ['export_pdf', 'export_docx'],
 };
 
 export function uiActionsForFamily(family: DeliverableFamily): UIAction[] {
