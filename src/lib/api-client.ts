@@ -413,6 +413,61 @@ export interface VisualDeliverable {
 
 export type DeliverableMode = 'brief' | 'report' | 'checklist' | 'visual' | 'table';
 
+export interface CopilotEvidenceItem {
+  item: string;
+  status: 'provided' | 'missing' | 'partial' | 'outdated';
+  gateBlocking: boolean;
+}
+
+export interface CopilotPanel {
+  visible: true;
+  context: {
+    projectContextId: string;
+    label: string;
+    workflowType: string;
+    technology: string | null;
+    jurisdiction: string | null;
+    stage: string | null;
+    contextAction: 'reused' | 'new' | 'explicit';
+    confidence: number | null;
+    turnCount: number;
+  };
+  progress: {
+    planDone: number;
+    planOpen: number;
+    planBlocked: number;
+    planDeferred: number;
+    planTotal: number;
+    nextActions: Array<{ action: string; priority: number; blocking: boolean }>;
+  };
+  evidence: {
+    provided: number;
+    missing: number;
+    partial: number;
+    outdated: number;
+    total: number;
+    gateBlockingMissing: CopilotEvidenceItem[];
+    items: CopilotEvidenceItem[];
+  };
+  gates: Array<{
+    gate: string;
+    status: string;
+    blockerCount: number;
+    blockers: string[];
+  }>;
+  blockers: {
+    activeCount: number;
+    resolvedCount: number;
+    items: Array<{
+      blocker: string;
+      blocks: string;
+      severity: string;
+      resolved: boolean;
+    }>;
+  };
+  hasChanges: boolean;
+}
+
 export interface ChatMeta {
   deliverableMode?: DeliverableMode;
   factsUsed: number;
@@ -424,6 +479,7 @@ export interface ChatMeta {
   hasPolicyData?: boolean;
   hasGuidanceData?: boolean;
   visuals?: VisualDeliverable[];
+  copilotPanel?: CopilotPanel | { visible: false };
 }
 
 /**
@@ -447,6 +503,10 @@ export function streamChat(
     onError?: (message: string) => void;
     onQuotaExceeded?: (info: ChatQuotaError) => void;
   },
+  options?: {
+    projectContextId?: string;
+    newProject?: boolean;
+  },
 ): AbortController {
   const controller = new AbortController();
 
@@ -454,7 +514,12 @@ export function streamChat(
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, history }),
+    body: JSON.stringify({
+      message,
+      history,
+      ...(options?.projectContextId && { projectContextId: options.projectContextId }),
+      ...(options?.newProject && { newProject: true }),
+    }),
     signal: controller.signal,
   })
     .then(async (res) => {
@@ -516,4 +581,52 @@ export function streamChat(
     });
 
   return controller;
+}
+
+// ─── Copilot API ─────────────────────────────────────────────────────────────
+
+export interface ContextSummary {
+  id: string;
+  label: string;
+  workflowType: string;
+  technology: string | null;
+  jurisdiction: string | null;
+  stage: string | null;
+  turnCount: number;
+  planDone: number;
+  planTotal: number;
+  evidenceProvided: number;
+  evidenceTotal: number;
+  activeBlockers: number;
+  updatedAt: string;
+  createdAt: string;
+}
+
+export type EvidenceStatus = 'provided' | 'missing' | 'partial' | 'outdated';
+export type PlanItemStatus = 'open' | 'done' | 'blocked' | 'deferred';
+
+/** List recent project contexts for context switching */
+export function listContexts() {
+  return apiFetch<{ contexts: ContextSummary[] }>('/api/v1/copilot/contexts');
+}
+
+/** Get copilot panel for a specific context (for replay/persistence) */
+export function getCopilotPanel(contextId: string) {
+  return apiFetch<{ panel: CopilotPanel | { visible: false } }>(`/api/v1/copilot/contexts/${contextId}/panel`);
+}
+
+/** Update evidence status on a project context */
+export function updateEvidence(contextId: string, evidenceItem: string, status: EvidenceStatus, note?: string) {
+  return apiFetch<{ panel: CopilotPanel | { visible: false }; changed: boolean }>('/api/v1/copilot/evidence', {
+    method: 'POST',
+    body: JSON.stringify({ contextId, evidenceItem, status, note }),
+  });
+}
+
+/** Update plan item status on a project context */
+export function updatePlanItem(contextId: string, actionId: string, status: PlanItemStatus) {
+  return apiFetch<{ panel: CopilotPanel | { visible: false }; changed: boolean }>('/api/v1/copilot/plan', {
+    method: 'POST',
+    body: JSON.stringify({ contextId, actionId, status }),
+  });
 }

@@ -4,7 +4,8 @@ import { Suspense, useRef, useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from '@/hooks/use-session';
-import { streamChat, createEditableDocument, exportDocument as exportDocumentUrl, type ChatMessage, type ChatMeta, type ChatQuotaError, type DocumentType } from '@/lib/api-client';
+import { streamChat, createEditableDocument, exportDocument as exportDocumentUrl, listContexts, getCopilotPanel as fetchCopilotPanel, updateEvidence, updatePlanItem, type ChatMessage, type ChatMeta, type ChatQuotaError, type DocumentType, type CopilotPanel as CopilotPanelData, type ContextSummary, type EvidenceStatus } from '@/lib/api-client';
+import { CopilotPanel } from '@/components/CopilotPanel';
 import { PolicyAnswer } from '@/components/PolicyAnswer';
 import { ProjectGuidanceCard } from '@/components/ProjectGuidancePack';
 import { QuotaModal } from '@/components/quota-modal';
@@ -145,6 +146,13 @@ function ComparePageContent() {
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [quotaInfo, setQuotaInfo] = useState<ChatQuotaError | null>(null);
 
+  // ── Copilot state ──
+  const [projectContextId, setProjectContextId] = useState<string | undefined>();
+  const [newProject, setNewProject] = useState(false);
+  const [recentContexts, setRecentContexts] = useState<ContextSummary[]>([]);
+  /** ID of the latest assistant message that has a copilot panel */
+  const latestCopilotMsgRef = useRef<string | null>(null);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -191,6 +199,17 @@ function ComparePageContent() {
         setMessages(prev => prev.map(m =>
           m.id === assistantMsg.id ? { ...m, meta } : m
         ));
+        // Track copilot panel context and fetch recent contexts
+        if (meta.copilotPanel && 'context' in meta.copilotPanel && meta.copilotPanel.visible) {
+          const ctxId = meta.copilotPanel.context.projectContextId;
+          setProjectContextId(ctxId);
+          setNewProject(false);
+          latestCopilotMsgRef.current = assistantMsg.id;
+          // Fetch recent contexts for switcher
+          listContexts().then(r => {
+            if (r.data?.contexts) setRecentContexts(r.data.contexts);
+          });
+        }
       },
       onToken: (token) => {
         setMessages(prev => prev.map(m =>
@@ -215,7 +234,7 @@ function ComparePageContent() {
         ));
         setStreaming(false);
       },
-    });
+    }, { projectContextId, newProject: newProject || undefined });
 
     controllerRef.current = controller;
   };
@@ -243,7 +262,59 @@ function ComparePageContent() {
       setStreaming(false);
     }
     setMessages([]);
+    setProjectContextId(undefined);
+    setNewProject(false);
+    setRecentContexts([]);
+    latestCopilotMsgRef.current = null;
   };
+
+  // ── Copilot callbacks ──
+
+  const handleSwitchContext = useCallback(async (contextId: string) => {
+    setProjectContextId(contextId);
+    setNewProject(false);
+    // Load panel for the switched context and update the latest copilot message
+    const result = await fetchCopilotPanel(contextId);
+    if (result.data?.panel && 'context' in result.data.panel && result.data.panel.visible) {
+      const panel = result.data.panel as CopilotPanelData;
+      latestCopilotMsgRef.current && setMessages(prev => prev.map(m =>
+        m.id === latestCopilotMsgRef.current && m.meta
+          ? { ...m, meta: { ...m.meta, copilotPanel: panel } }
+          : m
+      ));
+    }
+  }, []);
+
+  const handleNewContext = useCallback(() => {
+    setProjectContextId(undefined);
+    setNewProject(true);
+  }, []);
+
+  const handleUpdateEvidence = useCallback(async (item: string, status: EvidenceStatus) => {
+    if (!projectContextId) return;
+    const result = await updateEvidence(projectContextId, item, status);
+    if (result.data?.panel && 'context' in result.data.panel && result.data.panel.visible) {
+      const panel = result.data.panel as CopilotPanelData;
+      latestCopilotMsgRef.current && setMessages(prev => prev.map(m =>
+        m.id === latestCopilotMsgRef.current && m.meta
+          ? { ...m, meta: { ...m.meta, copilotPanel: panel } }
+          : m
+      ));
+    }
+  }, [projectContextId]);
+
+  const handleMarkActionDone = useCallback(async (actionId: string) => {
+    if (!projectContextId) return;
+    const result = await updatePlanItem(projectContextId, actionId, 'done');
+    if (result.data?.panel && 'context' in result.data.panel && result.data.panel.visible) {
+      const panel = result.data.panel as CopilotPanelData;
+      latestCopilotMsgRef.current && setMessages(prev => prev.map(m =>
+        m.id === latestCopilotMsgRef.current && m.meta
+          ? { ...m, meta: { ...m.meta, copilotPanel: panel } }
+          : m
+      ));
+    }
+  }, [projectContextId]);
 
   // Auto-send prefilled query from ?q= search param (e.g. from landing page example queries)
   useEffect(() => {
@@ -421,7 +492,15 @@ function ComparePageContent() {
                         <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
                     ) : msg.role === 'assistant' ? (
-                      <AssistantMessage content={msg.content} meta={msg.meta} />
+                      <AssistantMessage
+                        content={msg.content}
+                        meta={msg.meta}
+                        recentContexts={recentContexts}
+                        onSwitchContext={handleSwitchContext}
+                        onNewContext={handleNewContext}
+                        onUpdateEvidence={handleUpdateEvidence}
+                        onMarkActionDone={handleMarkActionDone}
+                      />
                     ) : (
                       <span>{msg.content}</span>
                     )}
@@ -575,7 +654,15 @@ function truncateToSentences(text: string, n: number): string {
 
 // ─── Markdown-lite renderer for assistant messages ──────────────────────────
 
-function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta }) {
+function AssistantMessage({ content, meta, recentContexts, onSwitchContext, onNewContext, onUpdateEvidence, onMarkActionDone }: {
+  content: string;
+  meta?: ChatMeta;
+  recentContexts?: ContextSummary[];
+  onSwitchContext?: (contextId: string) => void;
+  onNewContext?: () => void;
+  onUpdateEvidence?: (item: string, status: EvidenceStatus) => void;
+  onMarkActionDone?: (actionId: string) => void;
+}) {
   const [reportError, setReportError] = useState<string | null>(null);
   const [xlsxLoading, setXlsxLoading] = useState(false);
 
@@ -693,8 +780,25 @@ function AssistantMessage({ content, meta }: { content: string; meta?: ChatMeta 
       ? truncateToSentences(content, 4)
       : content;
 
+  // Copilot panel: show when we have a visible copilot panel in meta
+  const copilotPanel = meta?.copilotPanel && meta.copilotPanel.visible === true
+    ? meta.copilotPanel as CopilotPanelData
+    : null;
+
   return (
     <div>
+      {/* Copilot panel — project context, progress, evidence, blockers */}
+      {copilotPanel && (
+        <CopilotPanel
+          panel={copilotPanel}
+          recentContexts={recentContexts}
+          onSwitchContext={onSwitchContext}
+          onNewContext={onNewContext}
+          onUpdateEvidence={onUpdateEvidence}
+          onMarkActionDone={onMarkActionDone}
+        />
+      )}
+
       {/* Structured policy briefing card — only in report/brief modes */}
       {showProductCards && meta?.policyAnswer && (
         <div className="mb-3">
