@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useSession } from '@/hooks/use-session';
 import { streamChat, createEditableDocument, exportDocument as exportDocumentUrl, listContexts, getCopilotPanel as fetchCopilotPanel, updateEvidence, updatePlanItem, type ChatMessage, type ChatMeta, type ChatQuotaError, type DocumentType, type CopilotPanel as CopilotPanelData, type ContextSummary, type EvidenceStatus } from '@/lib/api-client';
 import { CopilotPanel } from '@/components/CopilotPanel';
+import { ProjectWorkspace } from '@/components/ProjectWorkspace';
 import { PolicyAnswer } from '@/components/PolicyAnswer';
 import { ProjectGuidanceCard } from '@/components/ProjectGuidancePack';
 import { QuotaModal } from '@/components/quota-modal';
@@ -150,8 +151,19 @@ function ComparePageContent() {
   const [projectContextId, setProjectContextId] = useState<string | undefined>();
   const [newProject, setNewProject] = useState(false);
   const [recentContexts, setRecentContexts] = useState<ContextSummary[]>([]);
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
   /** ID of the latest assistant message that has a copilot panel */
   const latestCopilotMsgRef = useRef<string | null>(null);
+
+  // Derive active copilot panel from the latest message that has one
+  const activeCopilotPanel = (() => {
+    if (!latestCopilotMsgRef.current) return null;
+    const msg = messages.find(m => m.id === latestCopilotMsgRef.current);
+    if (!msg?.meta?.copilotPanel) return null;
+    const p = msg.meta.copilotPanel;
+    if ('visible' in p && p.visible) return p as CopilotPanelData;
+    return null;
+  })();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -160,6 +172,18 @@ function ComparePageContent() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Auto-open workspace when copilot panel first appears
+  const hadCopilotRef = useRef(false);
+  useEffect(() => {
+    if (activeCopilotPanel && !hadCopilotRef.current) {
+      hadCopilotRef.current = true;
+      setWorkspaceOpen(true);
+    }
+    if (!activeCopilotPanel) {
+      hadCopilotRef.current = false;
+    }
+  }, [activeCopilotPanel]);
 
   // Auto-resize textarea
   const resizeTextarea = useCallback(() => {
@@ -335,7 +359,9 @@ function ComparePageContent() {
   }, [session.loading, session.user, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-      <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)]">
+      <div className="flex h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)]">
+      {/* ── Main chat column ── */}
+      <div className="flex flex-col flex-1 min-w-0">
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto">
           {messages.length === 0 ? (
@@ -618,6 +644,37 @@ function ComparePageContent() {
             />
           )}
         </div>
+      </div>
+
+      {/* ── Workspace toggle tab (visible when panel exists but workspace closed) ── */}
+      {activeCopilotPanel && !workspaceOpen && (
+        <button
+          onClick={() => setWorkspaceOpen(true)}
+          className="hidden md:flex flex-col items-center justify-center w-10 flex-shrink-0 border-l border-gray-200 bg-gray-50/80 hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
+          title="Open project workspace"
+          data-testid="workspace-toggle"
+        >
+          <svg className="w-4 h-4 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l-7 7 7 7" />
+          </svg>
+          <span className="text-[8px] font-semibold uppercase tracking-widest [writing-mode:vertical-lr] rotate-180">Workspace</span>
+        </button>
+      )}
+
+      {/* ── Project workspace panel ── */}
+      {activeCopilotPanel && workspaceOpen && (
+        <div className="hidden md:block">
+          <ProjectWorkspace
+            panel={activeCopilotPanel}
+            recentContexts={recentContexts}
+            onSwitchContext={handleSwitchContext}
+            onNewContext={handleNewContext}
+            onUpdateEvidence={handleUpdateEvidence}
+            onMarkActionDone={handleMarkActionDone}
+            onClose={() => setWorkspaceOpen(false)}
+          />
+        </div>
+      )}
       </div>
   );
 }
