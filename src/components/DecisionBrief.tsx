@@ -204,13 +204,13 @@ export function DecisionBrief({ data }: { data: DecisionBriefData }) {
         )}
 
         {/* Policy Viability Note */}
-        {data.viabilityNote && (
+        {data.viabilityNote && typeof data.viabilityNote === 'object' && (
           <div className="bg-blue-50/50 border border-blue-100 rounded-lg px-3 py-2">
             <SectionTitle>Policy Viability</SectionTitle>
             <div className="space-y-1.5 text-xs">
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">Support mechanism:</span>
-                <span className="text-gray-800 font-medium">{(data.viabilityNote.supportMechanism ?? '').slice(0, 100)}</span>
+                <span className="text-gray-800 font-medium">{String(data.viabilityNote.supportMechanism || '').slice(0, 100)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">Implementation clarity:</span>
