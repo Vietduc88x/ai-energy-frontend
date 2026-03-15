@@ -516,7 +516,7 @@ export function streamChat(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       message,
-      history,
+      history: history.slice(-50),
       ...(options?.projectContextId && { projectContextId: options.projectContextId }),
       ...(options?.newProject && { newProject: true }),
     }),
