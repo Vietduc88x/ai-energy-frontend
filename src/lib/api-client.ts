@@ -438,7 +438,7 @@ export interface CopilotPanel {
     planBlocked: number;
     planDeferred: number;
     planTotal: number;
-    nextActions: Array<{ action: string; priority: number; blocking: boolean }>;
+    nextActions: Array<{ actionId: string; action: string; priority: number; blocking: boolean }>;
   };
   evidence: {
     provided: number;

@@ -28,8 +28,8 @@ function makePanel(overrides?: Partial<CopilotPanelData>): CopilotPanelData {
       planDeferred: 0,
       planTotal: 4,
       nextActions: [
-        { action: 'Commission energy yield assessment', priority: 1, blocking: true },
-        { action: 'Review permits', priority: 1, blocking: true },
+        { actionId: 'yield-assessment', action: 'Commission energy yield assessment', priority: 1, blocking: true },
+        { actionId: 'review-permits', action: 'Review permits', priority: 1, blocking: true },
       ],
     },
     evidence: {
@@ -348,6 +348,6 @@ describe('CopilotPanel — mark action done', () => {
     render(<CopilotPanel panel={makePanel()} onMarkActionDone={onDone} />);
     const buttons = screen.getAllByTestId('mark-done-btn');
     fireEvent.click(buttons[0]);
-    expect(onDone).toHaveBeenCalledWith('Commission energy yield assessment');
+    expect(onDone).toHaveBeenCalledWith('yield-assessment');
   });
 });

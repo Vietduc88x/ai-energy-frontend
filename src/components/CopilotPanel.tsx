@@ -194,7 +194,7 @@ export function CopilotPanel({
                   <div key={i} className="flex items-center gap-1.5 text-gray-600 group">
                     {onMarkActionDone ? (
                       <button
-                        onClick={() => onMarkActionDone(a.action)}
+                        onClick={() => onMarkActionDone(a.actionId)}
                         className="flex-shrink-0 w-3.5 h-3.5 rounded border border-gray-300 hover:border-emerald-400 hover:bg-emerald-50 transition-colors mt-px"
                         title="Mark done"
                         data-testid="mark-done-btn"
