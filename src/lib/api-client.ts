@@ -397,6 +397,14 @@ export interface ProjectGuidancePack {
     topEvidenceNeed: string | null;
     topRisk: string | null;
   };
+  sectionNames?: {
+    criticalNow: string;
+    evidenceRequired: string;
+    workstreamReview: string;
+    riskSection: string;
+    documentSection: string;
+    epcSection: string;
+  };
   sourceCoverage: { guidelineCount: number; sourcesUsed: string[] };
   citations: Array<{
     source: string;
