@@ -136,7 +136,7 @@ export function ProjectWorkspace({
                   onClick={() => onSwitchContext?.(c.id)}
                   className="w-full text-left text-[11px] px-2 py-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors truncate"
                 >
-                  {c.label}
+                  {formatContextLabel(c.label)}
                   <span className="text-gray-300 ml-1">({c.planDone}/{c.planTotal})</span>
                 </button>
               ))}

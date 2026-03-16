@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { ProjectGuidancePack } from '@/lib/api-client';
 import { FamilyBadge, DeliverableMetaFooter } from './deliverables/DeliverableBadge';
-import { formatTechLabel, formatEnumLabel } from '@/lib/format-display';
+import { formatTechLabel, formatEnumLabel, cleanVisibleText } from '@/lib/format-display';
 
 // ─── Display Caps ────────────────────────────────────────────────────────────
 const INITIAL_ITEMS = 3;
@@ -102,7 +102,7 @@ export function ProjectGuidanceCard({ data }: { data: ProjectGuidancePack }) {
           {techLabels.join(' + ')}
           {data.jurisdiction ? <span className="text-gray-500 font-normal"> \u2014 {data.jurisdiction}</span> : ''}
         </h2>
-        <p className="text-xs text-gray-500 mt-1 leading-relaxed">{truncate(data.summary, 200)}</p>
+        <p className="text-xs text-gray-500 mt-1 leading-relaxed">{truncate(cleanVisibleText(data.summary), 200)}</p>
       </div>
 
       <div className="px-6 py-5 space-y-6">

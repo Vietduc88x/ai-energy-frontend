@@ -139,7 +139,7 @@ export function CopilotPanel({
                 className="w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors"
                 data-testid="context-option"
               >
-                <div className="font-medium text-gray-700 truncate">{c.label}</div>
+                <div className="font-medium text-gray-700 truncate">{formatContextLabel(c.label)}</div>
                 <div className="text-[10px] text-gray-400 mt-0.5">
                   {c.planDone}/{c.planTotal} done
                   {c.activeBlockers > 0 && <span className="text-red-400 ml-1">({c.activeBlockers} blocker{c.activeBlockers > 1 ? 's' : ''})</span>}

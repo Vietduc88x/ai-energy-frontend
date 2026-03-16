@@ -47,10 +47,22 @@ const LABEL_FIXES: Array<[RegExp, string]> = [
 /** Repair stale persisted context labels at render time */
 export function formatContextLabel(label: string): string {
   let result = label;
+  // Fix literal unicode escapes that leaked as text
+  result = result.replace(/\\u2014/g, '\u2014');
+  result = result.replace(/\\u2013/g, '\u2013');
   for (const [pattern, replacement] of LABEL_FIXES) {
     result = result.replace(pattern, replacement);
   }
   return result;
+}
+
+/** Clean any visible text of literal unicode escapes and common artifacts */
+export function cleanVisibleText(text: string): string {
+  return text
+    .replace(/\\u2014/g, '\u2014')
+    .replace(/\\u2013/g, '\u2013')
+    .replace(/\\u00[a-fA-F0-9]{2}/g, ' ')
+    .trim();
 }
 
 // ─── Visible Context Identity ───────────────────────────────────────────────
