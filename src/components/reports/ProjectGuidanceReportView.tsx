@@ -36,11 +36,20 @@ export interface ProjectGuidanceReportData {
     section: string;
     items: Array<{ label: string; severity?: string | null }>;
   }>;
+  sectionJudgments?: Array<{
+    section: string;
+    judgment: string;
+    mainConcern: string | null;
+    criticalDependency: string | null;
+  }>;
   documentRequestMatrix: Array<{
     category: string;
     document: string;
     whyItMatters?: string | null;
     priority?: string | null;
+    providedBy?: string | null;
+    consequenceIfMissing?: string | null;
+    gateBlocking?: boolean;
   }>;
   epcReviewQuestions: Array<{ section: string; questions: string[] }>;
   riskStarter: Array<{
@@ -162,19 +171,30 @@ export function ProjectGuidanceReportView({ report, metadata }: { report: Projec
       {report.checklist.length > 0 && (
         <ReportSection title={names?.evidenceRequired ?? 'Due Diligence Checklist'}>
           <div className="space-y-5">
-            {report.checklist.map((section) => (
-              <div key={section.section}>
-                <h4 className="text-xs font-semibold text-gray-800 mb-2">{section.section}</h4>
-                <div className="space-y-1.5">
-                  {section.items.map((item, j) => (
-                    <div key={j} className={`flex items-start gap-2 text-xs leading-relaxed ${item.severity === 'critical' ? 'text-gray-900' : 'text-gray-600'}`}>
-                      <span className={`flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full ${item.severity === 'critical' ? 'bg-red-400' : 'bg-gray-300'}`} />
-                      <span className="flex-1">{item.label}</span>
+            {report.checklist.map((section) => {
+              const sj = report.sectionJudgments?.find(j => j.section === section.section);
+              return (
+                <div key={section.section}>
+                  <h4 className="text-xs font-semibold text-gray-800 mb-1">{section.section}</h4>
+                  {sj && (
+                    <div className="bg-gray-50 rounded px-3 py-1.5 mb-2">
+                      <p className="text-[11px] text-gray-600 leading-relaxed">{sj.judgment}</p>
+                      {sj.mainConcern && (
+                        <p className="text-[10px] text-red-600 mt-0.5">Priority: {sj.mainConcern}</p>
+                      )}
                     </div>
-                  ))}
+                  )}
+                  <div className="space-y-1.5">
+                    {section.items.map((item, j) => (
+                      <div key={j} className={`flex items-start gap-2 text-xs leading-relaxed ${item.severity === 'critical' ? 'text-gray-900' : 'text-gray-600'}`}>
+                        <span className={`flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full ${item.severity === 'critical' ? 'bg-red-400' : 'bg-gray-300'}`} />
+                        <span className="flex-1">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </ReportSection>
       )}
@@ -182,12 +202,23 @@ export function ProjectGuidanceReportView({ report, metadata }: { report: Projec
       {/* ── Document Request ──────────────────────────────────────── */}
       {report.documentRequestMatrix.length > 0 && (
         <ReportSection title={names?.documentSection ?? 'Required Documents'}>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {report.documentRequestMatrix.map((row, i) => (
               <div key={i} className="text-xs leading-relaxed">
-                <span className="font-medium text-gray-800">{row.document}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-800">{row.document}</span>
+                  {row.gateBlocking && (
+                    <span className="text-[9px] font-semibold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">Gate-blocking</span>
+                  )}
+                </div>
                 {row.whyItMatters && row.whyItMatters !== '\u2014' && (
-                  <span className="text-gray-500 ml-1">&mdash; {row.whyItMatters}</span>
+                  <p className="text-[11px] text-gray-500 mt-0.5">{row.whyItMatters}</p>
+                )}
+                {(row.providedBy || row.consequenceIfMissing) && (
+                  <div className="flex gap-4 mt-0.5 text-[10px]">
+                    {row.providedBy && <span className="text-gray-400">Source: {row.providedBy}</span>}
+                    {row.consequenceIfMissing && <span className="text-amber-600">If missing: {row.consequenceIfMissing}</span>}
+                  </div>
                 )}
               </div>
             ))}

@@ -381,7 +381,14 @@ export interface ProjectGuidancePack {
   checklist: Array<{ section: string; items: string[] }>;
   documentRequestList: Array<{
     category: string;
-    documents: Array<{ name: string; whyItMatters?: string | null }>;
+    documents: Array<{
+      name: string;
+      whyItMatters?: string | null;
+      severity?: string | null;
+      providedBy?: string | null;
+      consequenceIfMissing?: string | null;
+      gateBlocking?: boolean;
+    }>;
   }>;
   epcReviewQuestions: Array<{ section: string; questions: string[] }>;
   riskStarter: Array<{
@@ -405,6 +412,13 @@ export interface ProjectGuidancePack {
     documentSection: string;
     epcSection: string;
   };
+  sectionJudgments?: Array<{
+    section: string;
+    judgment: string;
+    mainConcern: string | null;
+    criticalDependency: string | null;
+    severityBreakdown: { critical: number; high: number; medium: number; low: number; total: number };
+  }>;
   sourceCoverage: { guidelineCount: number; sourcesUsed: string[] };
   citations: Array<{
     source: string;

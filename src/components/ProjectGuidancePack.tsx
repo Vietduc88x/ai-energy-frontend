@@ -41,6 +41,7 @@ export function ProjectGuidanceCard({ data }: { data: ProjectGuidancePack }) {
   const totalChecklist = data.checklist.reduce((s, c) => s + c.items.length, 0);
   const exec = data.executiveSummary;
   const names = data.sectionNames;
+  const judgments = data.sectionJudgments;
 
   // Flatten all checklist items, prioritize critical
   const allItems = data.checklist.flatMap(s => s.items);
@@ -121,6 +122,20 @@ export function ProjectGuidanceCard({ data }: { data: ProjectGuidancePack }) {
         {/* ── Summary ──────────────────────────────────────────────── */}
         <p className="text-xs text-gray-600 leading-relaxed">{truncate(data.summary, 350)}</p>
 
+        {/* ── Section Judgments ──────────────────────────────────────── */}
+        {judgments && judgments.length > 0 && (
+          <div className="space-y-1.5">
+            {judgments.slice(0, 3).map((j, i) => (
+              <div key={i} className="bg-gray-50 rounded-md px-3 py-2">
+                <p className="text-[11px] text-gray-700 leading-relaxed">{j.judgment}</p>
+                {j.mainConcern && (
+                  <p className="text-[10px] text-red-600 mt-0.5">Priority: {truncate(j.mainConcern, 100)}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* ── Required Evidence / Checklist ─────────────────────────── */}
         {totalChecklist > 0 && (
           <div>
@@ -157,12 +172,21 @@ export function ProjectGuidanceCard({ data }: { data: ProjectGuidancePack }) {
                 <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-1.5">
                   {names?.documentSection ?? 'Required Documents'} ({allDocs.length})
                 </p>
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {allDocs.slice(0, MAX_DOCS).map((doc, i) => (
                     <div key={i} className="text-xs leading-relaxed">
                       <span className="text-gray-800">{truncate(doc.name, 80)}</span>
+                      {doc.gateBlocking && (
+                        <span className="text-[10px] text-red-500 ml-1 font-medium">Gate-blocking</span>
+                      )}
+                      {doc.providedBy && (
+                        <span className="text-[10px] text-gray-400 ml-1">({doc.providedBy})</span>
+                      )}
                       {doc.whyItMatters && (
-                        <span className="text-gray-400 ml-1">&mdash; {truncate(doc.whyItMatters, 80)}</span>
+                        <p className="text-[11px] text-gray-500 ml-0 mt-0.5">{truncate(doc.whyItMatters, 100)}</p>
+                      )}
+                      {doc.consequenceIfMissing && (
+                        <p className="text-[10px] text-amber-600 ml-0">If missing: {truncate(doc.consequenceIfMissing, 80)}</p>
                       )}
                     </div>
                   ))}
