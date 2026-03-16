@@ -3,6 +3,24 @@
 import { useState } from 'react';
 import type { CopilotPanel as CopilotPanelData, ContextSummary, EvidenceStatus } from '@/lib/api-client';
 
+// ─── Label formatting (hybrid-aware) ─────────────────────────────────────────
+
+function formatTech(tech: string): string {
+  return tech.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    .replace(/\bPv\b/, 'PV').replace(/\bBess\b/, 'BESS').replace(/\bCsp\b/, 'CSP')
+    .replace(/\bHv\b/, 'HV').replace(/\bMv\b/, 'MV').replace(/\bLv\b/, 'LV');
+}
+
+function formatLabel(label: string): string {
+  // Fix stale labels: apply tech formatting to the label string
+  return label
+    .replace(/\bsolar pv\b/gi, 'Solar PV')
+    .replace(/\bbess\b/gi, 'BESS')
+    .replace(/\bcsp\b/gi, 'CSP')
+    .replace(/\bonshore wind\b/gi, 'Onshore Wind')
+    .replace(/\boffshore wind\b/gi, 'Offshore Wind');
+}
+
 // ─── Status styling ──────────────────────────────────────────────────────────
 
 const EVIDENCE_DOT: Record<string, string> = {
@@ -108,15 +126,15 @@ export function ProjectWorkspace({
             </svg>
           </button>
         </div>
-        <div className="font-medium text-sm text-gray-800 leading-snug">{context.label}</div>
+        <div className="font-medium text-sm text-gray-800 leading-snug">{formatLabel(context.label)}</div>
         <div className="flex items-center gap-2 mt-1.5 text-[10px]">
           <span className="text-gray-400">{context.workflowType.replace(/_/g, ' ')}</span>
           {context.technology && <span className="text-gray-300">·</span>}
-          {context.technology && <span className="text-gray-400">{context.technology.replace(/_/g, ' ')}</span>}
+          {context.technology && <span className="text-gray-400">{formatTech(context.technology)}</span>}
           {context.jurisdiction && <span className="text-gray-300">·</span>}
           {context.jurisdiction && <span className="text-gray-500 font-medium">{context.jurisdiction}</span>}
           {context.stage && <span className="text-gray-300">·</span>}
-          {context.stage && <span className="text-gray-400">{context.stage}</span>}
+          {context.stage && <span className="text-gray-400">{context.stage.replace(/_/g, ' ')}</span>}
         </div>
         <div className="flex items-center gap-2 mt-1.5 text-[10px]">
           <span className="text-gray-400">Turn {context.turnCount}</span>

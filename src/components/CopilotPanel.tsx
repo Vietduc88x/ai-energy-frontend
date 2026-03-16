@@ -3,6 +3,17 @@
 import { useState } from 'react';
 import type { CopilotPanel as CopilotPanelData, ContextSummary, EvidenceStatus } from '@/lib/api-client';
 
+// ─── Label formatting ────────────────────────────────────────────────────────
+
+function formatLabel(label: string): string {
+  return label
+    .replace(/\bsolar pv\b/gi, 'Solar PV')
+    .replace(/\bbess\b/gi, 'BESS')
+    .replace(/\bcsp\b/gi, 'CSP')
+    .replace(/\bonshore wind\b/gi, 'Onshore Wind')
+    .replace(/\boffshore wind\b/gi, 'Offshore Wind');
+}
+
 // ─── Status colors ──────────────────────────────────────────────────────────
 
 const CONTEXT_ACTION_LABEL: Record<string, { text: string; color: string }> = {
@@ -97,7 +108,7 @@ export function CopilotPanel({
           )}
           {actionStyle.text}
         </span>
-        <span className="font-medium text-gray-800 truncate">{context.label}</span>
+        <span className="font-medium text-gray-800 truncate">{formatLabel(context.label)}</span>
 
         <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
           {context.turnCount > 1 && (
@@ -212,7 +223,7 @@ export function CopilotPanel({
           </div>
         )}
 
-        {/* Evidence compact summary (detail in workspace) */}
+        {/* Evidence — compact count only (detail in workspace) */}
         {hasEvidence && (
           <div data-testid="copilot-evidence">
             <div className="flex items-center justify-between">
