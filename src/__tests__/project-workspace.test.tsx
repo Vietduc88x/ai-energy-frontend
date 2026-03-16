@@ -107,18 +107,37 @@ describe('ProjectWorkspace — rendering', () => {
 
   it('shows context label', () => {
     render(<ProjectWorkspace panel={makePanel()} onClose={() => {}} />);
-    expect(screen.getAllByText(/Lender Tdd Planning/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Lender TDD Planning/).length).toBeGreaterThan(0);
   });
 
   it('shows workflow metadata', () => {
     render(<ProjectWorkspace panel={makePanel()} onClose={() => {}} />);
-    expect(screen.getByText('Lender Tdd Planning')).toBeTruthy();
+    expect(screen.getByText('Lender TDD Planning')).toBeTruthy();
     expect(screen.getByText('vietnam')).toBeTruthy();
   });
 
   it('prefers structured hybrid technology identity', () => {
     render(<ProjectWorkspace panel={makePanel({ context: { ...makePanel().context, technologies: ['solar_pv', 'bess'] } })} onClose={() => {}} />);
     expect(screen.getAllByText(/Solar PV \+ BESS/).length).toBeGreaterThan(0);
+  });
+
+  it('recovers hybrid identity from a stale label when technologies are incomplete', () => {
+    render(
+      <ProjectWorkspace
+        panel={makePanel({
+          context: {
+            ...makePanel().context,
+            label: 'Epc Contract Review — solar pv, bess',
+            workflowType: 'epc_contract_review',
+            technology: 'solar_pv',
+            technologies: undefined,
+            jurisdiction: null,
+          },
+        })}
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.getAllByText(/EPC Contract Review — Solar PV \+ BESS/).length).toBeGreaterThan(0);
   });
 
   it('shows turn count', () => {

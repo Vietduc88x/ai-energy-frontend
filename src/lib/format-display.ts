@@ -37,6 +37,8 @@ const LABEL_FIXES: Array<[RegExp, string]> = [
   [/\bsolar pv\b/gi, 'Solar PV'],
   [/\bbess\b/gi, 'BESS'],
   [/\bcsp\b/gi, 'CSP'],
+  [/\bepc\b/gi, 'EPC'],
+  [/\btdd\b/gi, 'TDD'],
   [/\bonshore wind\b/gi, 'Onshore Wind'],
   [/\boffshore wind\b/gi, 'Offshore Wind'],
   [/\bsolar_pv\b/gi, 'Solar PV'],
@@ -61,6 +63,8 @@ export function cleanVisibleText(text: string): string {
   return text
     .replace(/\\u2014/g, '\u2014')
     .replace(/\\u2013/g, '\u2013')
+    .replace(/â€”/g, '\u2014')
+    .replace(/â€“/g, '\u2013')
     .replace(/\\u00[a-fA-F0-9]{2}/g, ' ')
     .trim();
 }
@@ -86,12 +90,16 @@ export function buildVisibleContextIdentity(context: {
   stage?: string | null;
   jurisdiction?: string | null;
 }, packTechnologies?: string[]): VisibleContextIdentity {
+  const techsFromLabel = parseTechsFromLabel(context.label ?? '');
+
   // Derive technology label from structured data (priority) or context field (fallback)
   let technologyLabel: string;
   if (packTechnologies && packTechnologies.length > 0) {
     technologyLabel = formatTechList(packTechnologies);
   } else if (context.technologies && context.technologies.length > 0) {
     technologyLabel = formatTechList(context.technologies);
+  } else if (techsFromLabel.length > 1) {
+    technologyLabel = formatTechList(techsFromLabel);
   } else if (context.technology) {
     // Handle comma-separated or single technology strings
     const techs = context.technology.includes(',')
@@ -118,11 +126,22 @@ export function buildVisibleContextIdentity(context: {
   return { title, technologyLabel, stageLabel, workflowLabel };
 }
 
+function parseTechsFromLabel(label: string): string[] {
+  const found = new Set<string>();
+  const normalized = formatContextLabel(label).toLowerCase();
+  if (/\bsolar pv\b/.test(normalized)) found.add('solar_pv');
+  if (/\bbess\b/.test(normalized)) found.add('bess');
+  if (/\bonshore wind\b/.test(normalized)) found.add('onshore_wind');
+  if (/\boffshore wind\b/.test(normalized)) found.add('offshore_wind');
+  if (/\bcsp\b/.test(normalized)) found.add('csp');
+  return Array.from(found);
+}
+
 // ─── Enum / Stage Formatting ────────────────────────────────────────────────
 
 /** Format any underscore-separated enum value for display */
 export function formatEnumLabel(value: string): string {
-  return value.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  return formatContextLabel(value.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
 }
 
 // ─── Severity Display ───────────────────────────────────────────────────────

@@ -893,6 +893,16 @@ function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwi
   const isCompactMode = mode === 'checklist' || mode === 'table';
   const isVisualMode = mode === 'visual';
   const hasVisuals = (meta?.visuals?.length ?? 0) > 0;
+  const copilotContext = meta?.copilotPanel && meta.copilotPanel.visible === true ? meta.copilotPanel.context : null;
+  const workflowType = copilotContext?.workflowType ?? '';
+  const isLenderWorkflow = workflowType === 'lender_tdd_planning';
+  const filteredVisuals = (meta?.visuals ?? []).filter((v) => {
+    if (!isLenderWorkflow) return true;
+    if (v.visualType === 'document_request_matrix') return false;
+    return true;
+  });
+  const hasFilteredVisuals = filteredVisuals.length > 0;
+  const showGuidancePack = showProductCards && meta?.guidancePack && !isLenderWorkflow;
 
   // Truncate narrative when structured deliverables already convey the main points
   const hasStructuredBrief = !!(meta?.decisionBrief?.briefType);
@@ -901,8 +911,10 @@ function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwi
     ? truncateToSentences(content, 2)
     : isCompactMode && content.length > 0
       ? truncateToSentences(content, 4)
-      : (hasStructuredBrief || hasGuidancePack) && content.length > 0
-        ? truncateToSentences(content, 4)
+      : isLenderWorkflow && (hasStructuredBrief || hasGuidancePack) && content.length > 0
+        ? truncateToSentences(content, 2)
+        : (hasStructuredBrief || hasGuidancePack) && content.length > 0
+          ? truncateToSentences(content, 3)
         : content;
 
   // Copilot panel: show when we have a visible copilot panel in meta
@@ -933,7 +945,7 @@ function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwi
       )}
 
       {/* Structured guidance pack — only in report/brief modes */}
-      {showProductCards && meta?.guidancePack && (
+      {showGuidancePack && meta?.guidancePack && (
         <div className="mb-3">
           <ProjectGuidanceCard data={meta.guidancePack} />
         </div>
@@ -947,9 +959,9 @@ function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwi
       )}
 
       {/* Visual deliverables — rendered from structured specs */}
-      {hasVisuals && (
+      {hasFilteredVisuals && (
         <div className={`${isVisualMode ? 'mb-2' : 'mb-3'} space-y-3`}>
-          {meta!.visuals!.map((v) => {
+          {filteredVisuals.map((v) => {
             const s = v.spec as any;
             const m = (v as any).metadata ?? null;
             switch (v.visualType) {
@@ -967,7 +979,7 @@ function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwi
       )}
 
       {/* Text, actions, and footer — constrained width when deliverables widen the bubble */}
-      <div className={hasVisuals || meta?.policyAnswer || meta?.guidancePack ? 'max-w-2xl' : ''}>
+      <div className={hasFilteredVisuals || meta?.policyAnswer || showGuidancePack ? 'max-w-2xl' : ''}>
 
       {/* Narrative content — caption-only in visual mode, truncated in compact modes */}
       <div className={isVisualMode && hasVisuals ? 'text-sm text-gray-500 space-y-0.5' : 'space-y-0.5'}>

@@ -82,7 +82,7 @@ describe('CopilotPanel — context identity', () => {
 
   it('shows the context label', () => {
     render(<CopilotPanel panel={makePanel()} />);
-    expect(screen.getAllByText(/Lender Tdd Planning/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Lender TDD Planning/).length).toBeGreaterThan(0);
   });
 
   it('shows Continuing badge for reused context', () => {
@@ -108,6 +108,20 @@ describe('CopilotPanel — context identity', () => {
   it('prefers structured technologies for visible title', () => {
     render(<CopilotPanel panel={makePanel({ context: { ...makePanel().context, technologies: ['solar_pv', 'bess'] } })} />);
     expect(screen.getAllByText(/Solar PV \+ BESS/).length).toBeGreaterThan(0);
+  });
+
+  it('recovers hybrid identity and acronym casing from a stale label', () => {
+    render(<CopilotPanel panel={makePanel({
+      context: {
+        ...makePanel().context,
+        label: 'Epc Contract Review — solar pv, bess',
+        workflowType: 'epc_contract_review',
+        technology: 'solar_pv',
+        technologies: undefined,
+        jurisdiction: null,
+      },
+    })} />);
+    expect(screen.getAllByText(/EPC Contract Review — Solar PV \+ BESS/).length).toBeGreaterThan(0);
   });
 });
 
