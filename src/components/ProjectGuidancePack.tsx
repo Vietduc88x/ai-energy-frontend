@@ -5,12 +5,8 @@ import type { ProjectGuidancePack } from '@/lib/api-client';
 import { FamilyBadge, DeliverableMetaFooter } from './deliverables/DeliverableBadge';
 
 // ─── Display Caps ────────────────────────────────────────────────────────────
-const INITIAL_CRITICAL = 3;
-const INITIAL_CHECKLIST = 4;
-const INITIAL_DOCS = 3;
-const INITIAL_RISKS = 3;
-const INITIAL_EPC = 3;
-const EXPANDED_LIMIT = 20;
+const INITIAL_ITEMS = 3;
+const EXPANDED_LIMIT = 15;
 
 function truncate(text: string, max: number): string {
   if (text.length <= max) return text;
@@ -18,7 +14,6 @@ function truncate(text: string, max: number): string {
   return (cut > max * 0.3 ? text.slice(0, cut) : text.slice(0, max)).trim() + '\u2026';
 }
 
-/** Strip severity tags from checklist item text for display */
 function stripTag(text: string): string {
   return text.replace(/^\[(critical|recommended|optional|retrieved)\]\s*/i, '');
 }
@@ -26,294 +21,259 @@ function stripTag(text: string): string {
 function parseSeverityTag(text: string): string | null {
   const m = text.match(/^\[(critical|recommended|optional|retrieved)\]/i);
   if (!m) return null;
-  const tag = m[1].toLowerCase();
-  return tag === 'critical' ? 'critical' : tag === 'recommended' ? 'high' : null;
+  return m[1].toLowerCase() === 'critical' ? 'critical' : m[1].toLowerCase() === 'recommended' ? 'high' : null;
 }
 
-function ExpandToggle({ expanded, onToggle, hiddenCount, label }: {
+/** Format technology label — clean, consistent, hybrid-aware */
+function formatTech(tech: string): string {
+  return tech.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    .replace(/\bPv\b/, 'PV').replace(/\bBess\b/, 'BESS').replace(/\bCsp\b/, 'CSP');
+}
+
+function ExpandButton({ expanded, onToggle, hiddenCount, label }: {
   expanded: boolean; onToggle: () => void; hiddenCount: number; label: string;
 }) {
   if (hiddenCount <= 0 && !expanded) return null;
   return (
-    <button
-      onClick={onToggle}
-      className="text-[10px] text-blue-600 hover:text-blue-800 mt-2 cursor-pointer"
-    >
+    <button onClick={onToggle} className="text-[10px] text-blue-600 hover:text-blue-800 mt-1.5 cursor-pointer">
       {expanded ? 'Show less' : `+${hiddenCount} more ${label}`}
     </button>
   );
 }
 
+// ─── Section Component ──────────────────────────────────────────────────────
+
+function Section({ title, count, children, className }: {
+  title: string; count?: number; children: React.ReactNode; className?: string;
+}) {
+  return (
+    <div className={className}>
+      <h3 className="text-xs font-semibold text-gray-800 tracking-wide mb-2.5">
+        {title}
+        {count !== undefined && <span className="font-normal text-gray-400 ml-1.5">({count})</span>}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+// ─── Main Card Component ────────────────────────────────────────────────────
+
 export function ProjectGuidanceCard({ data }: { data: ProjectGuidancePack }) {
-  const [expandedSections, setExpanded] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggle = (key: string) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
 
   const exec = data.executiveSummary;
   const names = data.sectionNames;
-  const judgmentMap = new Map((data.sectionJudgments ?? []).map(j => [j.section, j]));
+  const timeline = data.issueTimeline;
+  const issues = data.workflowIssues ?? [];
+  const themes = data.reviewThemes ?? [];
 
-  // Flatten and prioritize
+  // Flatten and categorize
   const allItems = data.checklist.flatMap(s => s.items);
   const criticalItems = allItems.filter(i => parseSeverityTag(i) === 'critical');
   const otherItems = allItems.filter(i => parseSeverityTag(i) !== 'critical');
-  const totalChecklist = allItems.length;
 
-  // Issue-centric: use workflowIssues for risks and blockers when available
-  const issues = data.workflowIssues ?? [];
   const issueBlockers = issues.filter(i => i.category === 'blocker');
   const issueRisks = issues.filter(i => i.category === 'risk');
-  const issueEvidence = issues.filter(i => i.category === 'evidence_gap');
   const hasIssues = issues.length > 0;
 
-  // Fallback to riskStarter when no issues
-  const criticalRisks = hasIssues
-    ? issueRisks.filter(r => r.severity === 'critical' || r.severity === 'high')
-    : data.riskStarter.filter(r => r.severity === 'critical' || r.severity === 'high');
-  const otherRisks = hasIssues
-    ? issueRisks.filter(r => r.severity !== 'critical' && r.severity !== 'high')
-    : data.riskStarter.filter(r => r.severity !== 'critical' && r.severity !== 'high');
-
   const allDocs = data.documentRequestList.flatMap(c => c.documents);
-  const gateBlockingDocs = allDocs.filter(d => d.gateBlocking);
-  const otherDocs = allDocs.filter(d => !d.gateBlocking);
-  const sortedDocs = [...gateBlockingDocs, ...otherDocs];
+  const sortedDocs = [...allDocs].sort((a, b) => (b.gateBlocking ? 1 : 0) - (a.gateBlocking ? 1 : 0));
 
   const allEpc = data.epcReviewQuestions.flatMap(s => s.questions);
 
-  // Dynamic limits
-  const checklistLimit = expandedSections.checklist ? EXPANDED_LIMIT : INITIAL_CHECKLIST;
-  const docsLimit = expandedSections.docs ? EXPANDED_LIMIT : INITIAL_DOCS;
-  const risksLimit = expandedSections.risks ? EXPANDED_LIMIT : INITIAL_RISKS;
-  const epcLimit = expandedSections.epc ? EXPANDED_LIMIT : INITIAL_EPC;
+  const criticalRisks = hasIssues
+    ? issueRisks.filter(r => r.severity === 'critical' || r.severity === 'high')
+    : data.riskStarter.filter(r => r.severity === 'critical' || r.severity === 'high');
+
+  // Technology labels — hybrid-aware
+  const techLabels = data.technology.length > 0
+    ? data.technology.map(formatTech)
+    : [data.projectType.replace(/_/g, ' ')];
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      {/* ── Header ──────────────────────────────────────────────────── */}
-      <div className="px-5 py-4 border-b border-gray-100">
-        <div className="flex items-center gap-2 mb-1">
+
+      {/* ── Deliverable Header ─────────────────────────────────────── */}
+      <div className="px-6 pt-5 pb-4 border-b border-gray-100">
+        <div className="flex items-center gap-2 mb-2">
           <FamilyBadge family="pack" />
-          <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+          <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
             {data.stage.replace(/_/g, ' ')}
           </span>
         </div>
-        <h2 className="text-sm font-semibold text-gray-900">
-          {data.technology.length > 0
-            ? data.technology.map(t => t.replace(/_/g, ' ')).join(', ')
-            : data.projectType.replace(/_/g, ' ')}
-          {data.jurisdiction ? ` \u2014 ${data.jurisdiction}` : ''}
+        <h2 className="text-base font-semibold text-gray-900 leading-snug">
+          {techLabels.join(' + ')}
+          {data.jurisdiction ? <span className="text-gray-500 font-normal"> \u2014 {data.jurisdiction}</span> : ''}
         </h2>
+        <p className="text-xs text-gray-500 mt-1 leading-relaxed">{truncate(data.summary, 200)}</p>
       </div>
 
-      <div className="px-5 py-4 space-y-5">
+      <div className="px-6 py-5 space-y-6">
 
-        {/* ── Decision Progression (v2.1) ──────────────────────────── */}
-        {data.issueTimeline && data.issueTimeline.decisionStance !== 'unchanged' && (
-          <div className={`rounded-md px-3 py-2 text-[11px] ${
-            data.issueTimeline.decisionStance === 'improved' ? 'bg-green-50 text-green-800' :
-            data.issueTimeline.decisionStance === 'weakened' ? 'bg-red-50 text-red-800' :
-            'bg-amber-50 text-amber-800'
+        {/* ── Decision Stance ──────────────────────────────────────── */}
+        {timeline && timeline.decisionStance !== 'unchanged' && (
+          <div className={`rounded-lg px-4 py-3 text-xs ${
+            timeline.decisionStance === 'improved' ? 'bg-green-50 text-green-800 border border-green-200' :
+            timeline.decisionStance === 'weakened' ? 'bg-red-50 text-red-800 border border-red-200' :
+            'bg-amber-50 text-amber-800 border border-amber-200'
           }`}>
-            <p className="font-medium">{data.issueTimeline.stanceReason}</p>
-            {data.issueTimeline.mainBlockerNow && data.issueTimeline.decisionStance !== 'improved' && (
-              <p className="text-[10px] mt-0.5 opacity-80">Main blocker: {truncate(data.issueTimeline.mainBlockerNow, 80)}</p>
-            )}
-            {data.issueTimeline.resolvedSinceLast.length > 0 && (
-              <p className="text-[10px] mt-0.5 opacity-80">
-                Resolved: {data.issueTimeline.resolvedSinceLast.slice(0, 2).join(', ')}
-                {data.issueTimeline.resolvedSinceLast.length > 2 ? ` +${data.issueTimeline.resolvedSinceLast.length - 2} more` : ''}
-              </p>
+            <p className="font-medium">{timeline.stanceReason}</p>
+            {timeline.mainBlockerNow && timeline.decisionStance !== 'improved' && (
+              <p className="text-[11px] mt-1 opacity-75">Main blocker: {truncate(timeline.mainBlockerNow, 80)}</p>
             )}
           </div>
         )}
 
-        {/* ── Critical Now ─────────────────────────────────────────── */}
-        {exec && (exec.criticalItems.length > 0 || exec.topBlocker || exec.topRisk) && (
-          <div>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-red-700 mb-2">
-              {names?.criticalNow ?? 'Critical Now'}
-            </h3>
-            {exec.criticalItems.length > 0 && (
-              <ul className="space-y-1 mb-2">
-                {exec.criticalItems.slice(0, INITIAL_CRITICAL).map((item, i) => (
-                  <li key={i} className="text-xs text-gray-800 leading-relaxed pl-4 relative">
-                    <span className="absolute left-0 top-1 w-1.5 h-1.5 rounded-full bg-red-400" />
-                    {truncate(item, 180)}
-                  </li>
-                ))}
-              </ul>
+        {/* ── Critical Now Strip ───────────────────────────────────── */}
+        {exec && (exec.topBlocker || exec.topEvidenceNeed || exec.topRisk) && (
+          <div className="flex flex-wrap gap-2">
+            {exec.topBlocker && (
+              <span className="inline-flex items-center gap-1 bg-red-50 text-red-700 rounded-full px-3 py-1 text-[11px] font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                {truncate(exec.topBlocker, 50)}
+              </span>
             )}
-            {(exec.topBlocker || exec.topEvidenceNeed || exec.topRisk) && (
-              <div className="flex flex-wrap gap-2 text-[11px]">
-                {exec.topBlocker && (
-                  <span className="bg-red-50 text-red-700 rounded px-2 py-1">
-                    <span className="font-semibold">Blocker:</span> {truncate(exec.topBlocker, 60)}
-                  </span>
-                )}
-                {exec.topEvidenceNeed && (
-                  <span className="bg-amber-50 text-amber-700 rounded px-2 py-1">
-                    <span className="font-semibold">Evidence:</span> {truncate(exec.topEvidenceNeed, 60)}
-                  </span>
-                )}
-                {exec.topRisk && (
-                  <span className="bg-orange-50 text-orange-700 rounded px-2 py-1">
-                    <span className="font-semibold">Risk:</span> {truncate(exec.topRisk, 60)}
-                  </span>
-                )}
-              </div>
+            {exec.topEvidenceNeed && (
+              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 rounded-full px-3 py-1 text-[11px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                {truncate(exec.topEvidenceNeed, 50)}
+              </span>
+            )}
+            {exec.topRisk && (
+              <span className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 rounded-full px-3 py-1 text-[11px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                {truncate(exec.topRisk, 50)}
+              </span>
             )}
           </div>
         )}
 
-        {/* ── Summary ──────────────────────────────────────────────── */}
-        <p className="text-xs text-gray-600 leading-relaxed">{truncate(data.summary, 280)}</p>
-
-        {/* ── Key Blockers (issue-centric) ─────────────────────────── */}
+        {/* ── Blockers ─────────────────────────────────────────────── */}
         {hasIssues && issueBlockers.length > 0 && (
-          <div>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-red-700 mb-2">
-              Blockers <span className="font-normal text-red-400">({issueBlockers.length})</span>
-            </h3>
-            <div className="space-y-1">
-              {issueBlockers.slice(0, 3).map((b, i) => (
-                <div key={`bl-${i}`} className={`rounded px-3 py-1.5 ${b.state?.status === 'resolved' ? 'bg-green-50' : 'bg-red-50'}`}>
+          <Section title="Blockers" count={issueBlockers.length}>
+            <div className="space-y-2">
+              {issueBlockers.slice(0, INITIAL_ITEMS).map((b, i) => (
+                <div key={i} className={`rounded-lg px-4 py-2.5 ${b.state?.status === 'resolved' ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100'}`}>
                   <div className="flex items-center gap-2">
-                    <p className="text-xs font-medium text-gray-900">{truncate(b.title, 100)}</p>
+                    <p className="text-xs font-medium text-gray-900 flex-1">{truncate(b.title, 100)}</p>
                     {b.state?.status === 'resolved' && (
-                      <span className="text-[9px] text-green-600 bg-green-100 px-1 py-0.5 rounded font-medium">Resolved</span>
-                    )}
-                    {b.state?.status === 'evidence_provided' && (
-                      <span className="text-[9px] text-blue-600 bg-blue-50 px-1 py-0.5 rounded font-medium">Evidence received</span>
+                      <span className="text-[9px] text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full font-medium">Resolved</span>
                     )}
                   </div>
-                  {b.blocks && <p className="text-[10px] text-red-600">Blocks: {b.blocks}</p>}
-                  {b.recommendedAction && <p className="text-[10px] text-teal-700 mt-0.5">{truncate(b.recommendedAction, 100)}</p>}
+                  {b.blocks && <p className="text-[11px] text-red-600 mt-1">Blocks: {b.blocks}</p>}
+                  {b.recommendedAction && <p className="text-[11px] text-teal-700 mt-0.5">{truncate(b.recommendedAction, 100)}</p>}
                 </div>
               ))}
             </div>
-          </div>
+          </Section>
         )}
 
         {/* ── Top Risks ────────────────────────────────────────────── */}
-        {(hasIssues ? issueRisks.length > 0 : criticalRisks.length > 0) && (
-          <div>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-2">
-              {names?.riskSection ?? 'Risk Register'} <span className="font-normal text-gray-400">({hasIssues ? issueRisks.length : data.riskStarter.length})</span>
-            </h3>
+        {criticalRisks.length > 0 && (
+          <Section title={names?.riskSection ?? 'Key Risks'} count={hasIssues ? issueRisks.length : data.riskStarter.length}>
             <div className="space-y-1.5">
-              {criticalRisks.slice(0, risksLimit).map((risk: any, i: number) => (
-                <div key={`cr-${i}`} className="bg-red-50 rounded px-3 py-2">
+              {criticalRisks.slice(0, expanded.risks ? EXPANDED_LIMIT : INITIAL_ITEMS).map((risk: any, i: number) => (
+                <div key={i} className="rounded-lg bg-gray-50 px-4 py-2.5 border border-gray-100">
                   <p className="text-xs font-medium text-gray-900">{truncate(risk.title ?? risk.risk, 120)}</p>
                   {(risk.consequenceIfIgnored || risk.mitigation) && (
-                    <p className="text-[11px] text-teal-700 mt-0.5">{truncate(risk.consequenceIfIgnored ?? risk.mitigation, 120)}</p>
+                    <p className="text-[11px] text-gray-600 mt-0.5">{truncate(risk.consequenceIfIgnored ?? risk.mitigation, 120)}</p>
                   )}
                 </div>
               ))}
-              {expandedSections.risks && otherRisks.slice(0, EXPANDED_LIMIT - criticalRisks.length).map((risk: any, i: number) => (
-                <div key={`or-${i}`} className="px-3 py-1.5 border-l-2 border-gray-200">
-                  <p className="text-xs text-gray-700">{truncate(risk.title ?? risk.risk, 120)}</p>
-                </div>
-              ))}
             </div>
-            <ExpandToggle
-              expanded={!!expandedSections.risks}
-              onToggle={() => toggle('risks')}
-              hiddenCount={(hasIssues ? issueRisks.length : data.riskStarter.length) - Math.min(criticalRisks.length, risksLimit)}
-              label="risks"
-            />
-          </div>
+            <ExpandButton expanded={!!expanded.risks} onToggle={() => toggle('risks')}
+              hiddenCount={(hasIssues ? issueRisks.length : data.riskStarter.length) - INITIAL_ITEMS} label="risks" />
+          </Section>
         )}
 
         {/* ── Required Evidence ─────────────────────────────────────── */}
-        {totalChecklist > 0 && (
-          <div>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-2">
-              {names?.evidenceRequired ?? 'Required Evidence'} <span className="font-normal text-gray-400">({totalChecklist})</span>
-            </h3>
-            <div className="space-y-0.5">
-              {criticalItems.slice(0, checklistLimit).map((item, i) => (
-                <div key={`c-${i}`} className="flex items-start gap-2 text-xs text-gray-800">
-                  <span className="flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-red-400" />
-                  <span className="leading-relaxed">{truncate(stripTag(item), 150)}</span>
+        {allItems.length > 0 && (
+          <Section title={names?.evidenceRequired ?? 'Required Evidence'} count={allItems.length}>
+            <div className="space-y-1">
+              {criticalItems.slice(0, expanded.evidence ? EXPANDED_LIMIT : INITIAL_ITEMS).map((item, i) => (
+                <div key={`c-${i}`} className="flex items-start gap-2.5 text-xs text-gray-800 py-0.5">
+                  <span className="flex-shrink-0 mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400" />
+                  <span className="leading-relaxed">{truncate(stripTag(item), 140)}</span>
                 </div>
               ))}
-              {otherItems.slice(0, Math.max(0, checklistLimit - criticalItems.length)).map((item, i) => (
-                <div key={`o-${i}`} className="flex items-start gap-2 text-xs text-gray-500">
-                  <span className="flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-gray-300" />
-                  <span className="leading-relaxed">{truncate(stripTag(item), 150)}</span>
+              {otherItems.slice(0, Math.max(0, (expanded.evidence ? EXPANDED_LIMIT : INITIAL_ITEMS) - criticalItems.length)).map((item, i) => (
+                <div key={`o-${i}`} className="flex items-start gap-2.5 text-xs text-gray-500 py-0.5">
+                  <span className="flex-shrink-0 mt-1.5 w-1.5 h-1.5 rounded-full bg-gray-300" />
+                  <span className="leading-relaxed">{truncate(stripTag(item), 140)}</span>
                 </div>
               ))}
             </div>
-            <ExpandToggle
-              expanded={!!expandedSections.checklist}
-              onToggle={() => toggle('checklist')}
-              hiddenCount={totalChecklist - Math.min(totalChecklist, checklistLimit)}
-              label="items"
-            />
-          </div>
+            <ExpandButton expanded={!!expanded.evidence} onToggle={() => toggle('evidence')}
+              hiddenCount={allItems.length - INITIAL_ITEMS} label="items" />
+          </Section>
+        )}
+
+        {/* ── Review Themes (replaces flat EPC list) ───────────────── */}
+        {themes.length > 0 && (
+          <Section title={names?.epcSection ?? 'Review Themes'} count={allEpc.length}>
+            <div className="space-y-3">
+              {themes.slice(0, expanded.themes ? themes.length : 4).map((theme, ti) => (
+                <div key={ti}>
+                  <button
+                    onClick={() => toggle(`theme-${ti}`)}
+                    className="w-full text-left flex items-center justify-between group cursor-pointer"
+                  >
+                    <h4 className="text-[11px] font-semibold text-gray-700 group-hover:text-gray-900">
+                      {theme.theme} <span className="font-normal text-gray-400">({theme.items.length})</span>
+                    </h4>
+                    <span className="text-[10px] text-gray-400 group-hover:text-gray-600">
+                      {expanded[`theme-${ti}`] ? '\u25B2' : '\u25BC'}
+                    </span>
+                  </button>
+                  {expanded[`theme-${ti}`] && (
+                    <div className="mt-1.5 ml-1 space-y-1 border-l-2 border-gray-100 pl-3">
+                      {theme.items.map((item, qi) => (
+                        <p key={qi} className="text-[11px] text-gray-600 leading-relaxed">{truncate(item, 150)}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {themes.length > 4 && (
+              <ExpandButton expanded={!!expanded.themes} onToggle={() => toggle('themes')}
+                hiddenCount={themes.length - 4} label="themes" />
+            )}
+          </Section>
         )}
 
         {/* ── Documents ────────────────────────────────────────────── */}
         {allDocs.length > 0 && (
-          <div>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-2">
-              {names?.documentSection ?? 'Required Documents'} <span className="font-normal text-gray-400">({allDocs.length})</span>
-            </h3>
+          <Section title={names?.documentSection ?? 'Required Documents'} count={allDocs.length}>
             <div className="space-y-1">
-              {sortedDocs.slice(0, docsLimit).map((doc, i) => (
-                <div key={i} className="text-xs leading-relaxed">
-                  <span className="text-gray-800">{truncate(doc.name, 80)}</span>
-                  {doc.gateBlocking && (
-                    <span className="text-[9px] text-red-600 bg-red-50 px-1 py-0.5 rounded ml-1 font-medium">Gate-blocking</span>
-                  )}
-                  {expandedSections.docs && doc.providedBy && (
-                    <span className="text-[10px] text-gray-400 ml-1">({doc.providedBy})</span>
-                  )}
+              {sortedDocs.slice(0, expanded.docs ? EXPANDED_LIMIT : INITIAL_ITEMS).map((doc, i) => (
+                <div key={i} className="flex items-start gap-2.5 text-xs py-0.5">
+                  <span className={`flex-shrink-0 mt-1.5 w-1.5 h-1.5 rounded-full ${doc.gateBlocking ? 'bg-red-400' : 'bg-gray-300'}`} />
+                  <span className="text-gray-800 leading-relaxed">
+                    {truncate(doc.name, 80)}
+                    {doc.gateBlocking && <span className="text-[9px] text-red-600 ml-1 font-medium">Gate-blocking</span>}
+                  </span>
                 </div>
               ))}
             </div>
-            <ExpandToggle
-              expanded={!!expandedSections.docs}
-              onToggle={() => toggle('docs')}
-              hiddenCount={allDocs.length - Math.min(allDocs.length, docsLimit)}
-              label="documents"
-            />
-          </div>
-        )}
-
-        {/* ── Review Prompts ───────────────────────────────────────── */}
-        {allEpc.length > 0 && (
-          <div>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-2">
-              {names?.epcSection ?? 'Review Prompts'} <span className="font-normal text-gray-400">({allEpc.length})</span>
-            </h3>
-            <div className="space-y-0.5">
-              {allEpc.slice(0, epcLimit).map((q, i) => (
-                <p key={i} className="text-xs text-gray-600 leading-relaxed">{truncate(q, 160)}</p>
-              ))}
-            </div>
-            <ExpandToggle
-              expanded={!!expandedSections.epc}
-              onToggle={() => toggle('epc')}
-              hiddenCount={allEpc.length - Math.min(allEpc.length, epcLimit)}
-              label="prompts"
-            />
-          </div>
+            <ExpandButton expanded={!!expanded.docs} onToggle={() => toggle('docs')}
+              hiddenCount={allDocs.length - INITIAL_ITEMS} label="documents" />
+          </Section>
         )}
 
         {/* ── Sources ──────────────────────────────────────────────── */}
         {data.citations.length > 0 && (
-          <div className="pt-2 border-t border-gray-100">
+          <div className="pt-3 border-t border-gray-100">
             <p className="text-[10px] text-gray-400">
               Based on {data.sourceCoverage.guidelineCount} source{data.sourceCoverage.guidelineCount !== 1 ? 's' : ''}
-              {data.citations.length > 0 && (
-                <span className="ml-1 text-gray-400">
-                  ({data.citations.slice(0, 3).map(c => c.title).join(', ')}{data.citations.length > 3 ? `, +${data.citations.length - 3} more` : ''})
-                </span>
-              )}
+              <span className="ml-1">
+                ({data.citations.slice(0, 2).map(c => c.title).join(', ')}{data.citations.length > 2 ? `, +${data.citations.length - 2}` : ''})
+              </span>
             </p>
           </div>
         )}
-
       </div>
 
       <DeliverableMetaFooter meta={{

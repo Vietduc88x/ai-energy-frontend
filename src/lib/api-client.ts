@@ -427,6 +427,7 @@ export interface ProjectGuidancePack {
     url?: string | null;
   }>;
   caveat?: string | null;
+  reviewThemes?: Array<{ theme: string; items: string[]; priority: number }>;
   issueTimeline?: {
     resolvedSinceLast: string[];
     evidenceReceivedSinceLast: string[];
