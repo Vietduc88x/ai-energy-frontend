@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { ProjectGuidancePack } from '@/lib/api-client';
 import { FamilyBadge, DeliverableMetaFooter } from './deliverables/DeliverableBadge';
+import { formatTechLabel, formatEnumLabel } from '@/lib/format-display';
 
 // ─── Display Caps ────────────────────────────────────────────────────────────
 const INITIAL_ITEMS = 3;
@@ -22,12 +23,6 @@ function parseSeverityTag(text: string): string | null {
   const m = text.match(/^\[(critical|recommended|optional|retrieved)\]/i);
   if (!m) return null;
   return m[1].toLowerCase() === 'critical' ? 'critical' : m[1].toLowerCase() === 'recommended' ? 'high' : null;
-}
-
-/** Format technology label — clean, consistent, hybrid-aware */
-function formatTech(tech: string): string {
-  return tech.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-    .replace(/\bPv\b/, 'PV').replace(/\bBess\b/, 'BESS').replace(/\bCsp\b/, 'CSP');
 }
 
 function ExpandButton({ expanded, onToggle, hiddenCount, label }: {
@@ -89,8 +84,8 @@ export function ProjectGuidanceCard({ data }: { data: ProjectGuidancePack }) {
 
   // Technology labels — hybrid-aware
   const techLabels = data.technology.length > 0
-    ? data.technology.map(formatTech)
-    : [data.projectType.replace(/_/g, ' ')];
+    ? data.technology.map(formatTechLabel)
+    : [formatEnumLabel(data.projectType)];
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -100,7 +95,7 @@ export function ProjectGuidanceCard({ data }: { data: ProjectGuidancePack }) {
         <div className="flex items-center gap-2 mb-2">
           <FamilyBadge family="pack" />
           <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-            {data.stage.replace(/_/g, ' ')}
+            {formatEnumLabel(data.stage)}
           </span>
         </div>
         <h2 className="text-base font-semibold text-gray-900 leading-snug">
