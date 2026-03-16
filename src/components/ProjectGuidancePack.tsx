@@ -58,8 +58,20 @@ export function ProjectGuidanceCard({ data }: { data: ProjectGuidancePack }) {
   const otherItems = allItems.filter(i => parseSeverityTag(i) !== 'critical');
   const totalChecklist = allItems.length;
 
-  const criticalRisks = data.riskStarter.filter(r => r.severity === 'critical' || r.severity === 'high');
-  const otherRisks = data.riskStarter.filter(r => r.severity !== 'critical' && r.severity !== 'high');
+  // Issue-centric: use workflowIssues for risks and blockers when available
+  const issues = data.workflowIssues ?? [];
+  const issueBlockers = issues.filter(i => i.category === 'blocker');
+  const issueRisks = issues.filter(i => i.category === 'risk');
+  const issueEvidence = issues.filter(i => i.category === 'evidence_gap');
+  const hasIssues = issues.length > 0;
+
+  // Fallback to riskStarter when no issues
+  const criticalRisks = hasIssues
+    ? issueRisks.filter(r => r.severity === 'critical' || r.severity === 'high')
+    : data.riskStarter.filter(r => r.severity === 'critical' || r.severity === 'high');
+  const otherRisks = hasIssues
+    ? issueRisks.filter(r => r.severity !== 'critical' && r.severity !== 'high')
+    : data.riskStarter.filter(r => r.severity !== 'critical' && r.severity !== 'high');
 
   const allDocs = data.documentRequestList.flatMap(c => c.documents);
   const gateBlockingDocs = allDocs.filter(d => d.gateBlocking);
@@ -135,29 +147,49 @@ export function ProjectGuidanceCard({ data }: { data: ProjectGuidancePack }) {
         {/* ── Summary ──────────────────────────────────────────────── */}
         <p className="text-xs text-gray-600 leading-relaxed">{truncate(data.summary, 280)}</p>
 
-        {/* ── Top Risks ────────────────────────────────────────────── */}
-        {criticalRisks.length > 0 && (
+        {/* ── Key Blockers (issue-centric) ─────────────────────────── */}
+        {hasIssues && issueBlockers.length > 0 && (
           <div>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-2">
-              {names?.riskSection ?? 'Risk Register'} <span className="font-normal text-gray-400">({data.riskStarter.length})</span>
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-red-700 mb-2">
+              Blockers <span className="font-normal text-red-400">({issueBlockers.length})</span>
             </h3>
-            <div className="space-y-1.5">
-              {criticalRisks.slice(0, risksLimit).map((risk, i) => (
-                <div key={`cr-${i}`} className="bg-red-50 rounded px-3 py-2">
-                  <p className="text-xs font-medium text-gray-900">{truncate(risk.risk, 120)}</p>
-                  {risk.mitigation && <p className="text-[11px] text-teal-700 mt-0.5">{truncate(risk.mitigation, 120)}</p>}
+            <div className="space-y-1">
+              {issueBlockers.slice(0, 3).map((b, i) => (
+                <div key={`bl-${i}`} className="bg-red-50 rounded px-3 py-1.5">
+                  <p className="text-xs font-medium text-gray-900">{truncate(b.title, 100)}</p>
+                  {b.blocks && <p className="text-[10px] text-red-600">Blocks: {b.blocks}</p>}
+                  {b.recommendedAction && <p className="text-[10px] text-teal-700 mt-0.5">{truncate(b.recommendedAction, 100)}</p>}
                 </div>
               ))}
-              {expandedSections.risks && otherRisks.slice(0, EXPANDED_LIMIT - criticalRisks.length).map((risk, i) => (
+            </div>
+          </div>
+        )}
+
+        {/* ── Top Risks ────────────────────────────────────────────── */}
+        {(hasIssues ? issueRisks.length > 0 : criticalRisks.length > 0) && (
+          <div>
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-2">
+              {names?.riskSection ?? 'Risk Register'} <span className="font-normal text-gray-400">({hasIssues ? issueRisks.length : data.riskStarter.length})</span>
+            </h3>
+            <div className="space-y-1.5">
+              {criticalRisks.slice(0, risksLimit).map((risk: any, i: number) => (
+                <div key={`cr-${i}`} className="bg-red-50 rounded px-3 py-2">
+                  <p className="text-xs font-medium text-gray-900">{truncate(risk.title ?? risk.risk, 120)}</p>
+                  {(risk.consequenceIfIgnored || risk.mitigation) && (
+                    <p className="text-[11px] text-teal-700 mt-0.5">{truncate(risk.consequenceIfIgnored ?? risk.mitigation, 120)}</p>
+                  )}
+                </div>
+              ))}
+              {expandedSections.risks && otherRisks.slice(0, EXPANDED_LIMIT - criticalRisks.length).map((risk: any, i: number) => (
                 <div key={`or-${i}`} className="px-3 py-1.5 border-l-2 border-gray-200">
-                  <p className="text-xs text-gray-700">{truncate(risk.risk, 120)}</p>
+                  <p className="text-xs text-gray-700">{truncate(risk.title ?? risk.risk, 120)}</p>
                 </div>
               ))}
             </div>
             <ExpandToggle
               expanded={!!expandedSections.risks}
               onToggle={() => toggle('risks')}
-              hiddenCount={data.riskStarter.length - Math.min(criticalRisks.length, risksLimit)}
+              hiddenCount={(hasIssues ? issueRisks.length : data.riskStarter.length) - Math.min(criticalRisks.length, risksLimit)}
               label="risks"
             />
           </div>

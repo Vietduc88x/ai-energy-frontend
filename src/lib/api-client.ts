@@ -427,6 +427,22 @@ export interface ProjectGuidancePack {
     url?: string | null;
   }>;
   caveat?: string | null;
+  workflowIssues?: Array<{
+    id: string;
+    title: string;
+    description: string;
+    category: 'blocker' | 'evidence_gap' | 'risk' | 'action_required' | 'advisory';
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    workstream: string | null;
+    gateBlocking: boolean;
+    blocks: string | null;
+    evidenceNeeded: string | null;
+    evidenceProducer: string | null;
+    consequenceIfIgnored: string | null;
+    recommendedAction: string | null;
+    actionOwner: string | null;
+    sourceCount: number;
+  }>;
 }
 
 export interface VisualDeliverable {
