@@ -155,8 +155,16 @@ export function ProjectGuidanceCard({ data }: { data: ProjectGuidancePack }) {
             </h3>
             <div className="space-y-1">
               {issueBlockers.slice(0, 3).map((b, i) => (
-                <div key={`bl-${i}`} className="bg-red-50 rounded px-3 py-1.5">
-                  <p className="text-xs font-medium text-gray-900">{truncate(b.title, 100)}</p>
+                <div key={`bl-${i}`} className={`rounded px-3 py-1.5 ${b.state?.status === 'resolved' ? 'bg-green-50' : 'bg-red-50'}`}>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-medium text-gray-900">{truncate(b.title, 100)}</p>
+                    {b.state?.status === 'resolved' && (
+                      <span className="text-[9px] text-green-600 bg-green-100 px-1 py-0.5 rounded font-medium">Resolved</span>
+                    )}
+                    {b.state?.status === 'evidence_provided' && (
+                      <span className="text-[9px] text-blue-600 bg-blue-50 px-1 py-0.5 rounded font-medium">Evidence received</span>
+                    )}
+                  </div>
                   {b.blocks && <p className="text-[10px] text-red-600">Blocks: {b.blocks}</p>}
                   {b.recommendedAction && <p className="text-[10px] text-teal-700 mt-0.5">{truncate(b.recommendedAction, 100)}</p>}
                 </div>

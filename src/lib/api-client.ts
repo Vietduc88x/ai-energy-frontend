@@ -442,6 +442,12 @@ export interface ProjectGuidancePack {
     recommendedAction: string | null;
     actionOwner: string | null;
     sourceCount: number;
+    state?: {
+      status: 'open' | 'evidence_requested' | 'evidence_provided' | 'still_blocking' | 'mitigated' | 'resolved' | 'superseded';
+      evidenceStatus: string | null;
+      actionStatus: string | null;
+      changeNote: string | null;
+    };
   }>;
 }
 
