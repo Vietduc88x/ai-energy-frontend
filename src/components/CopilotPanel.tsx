@@ -212,18 +212,16 @@ export function CopilotPanel({
           </div>
         )}
 
-        {/* Evidence summary + interactive detail */}
+        {/* Evidence compact summary (detail in workspace) */}
         {hasEvidence && (
           <div data-testid="copilot-evidence">
-            <div className="flex items-center justify-between mb-1">
-              <button
-                onClick={() => setShowEvidenceDetail(!showEvidenceDetail)}
-                className="font-medium text-gray-700 hover:text-gray-900 flex items-center gap-1 transition-colors"
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-gray-700"
                 data-testid="evidence-toggle"
               >
                 Evidence
                 <svg
-                  className={`w-3 h-3 text-gray-400 transition-transform ${showEvidenceDetail ? 'rotate-180' : ''}`}
+                  className={`w-3 h-3 text-gray-400 transition-transform inline ml-1 ${showEvidenceDetail ? 'rotate-180' : ''}`}
                   fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -258,43 +256,11 @@ export function CopilotPanel({
               </div>
             )}
 
-            {/* Expandable detail with clickable status */}
-            {showEvidenceDetail && (
-              <div className="space-y-1 mt-1" data-testid="evidence-detail">
-                {evidence.items.map((e, i) => (
-                  <div key={i} className="flex items-center gap-2 group">
-                    {onUpdateEvidence ? (
-                      <button
-                        onClick={() => {
-                          const nextIdx = (EVIDENCE_CYCLE.indexOf(e.status) + 1) % EVIDENCE_CYCLE.length;
-                          onUpdateEvidence(e.item, EVIDENCE_CYCLE[nextIdx]);
-                        }}
-                        className={`flex-shrink-0 w-2 h-2 rounded-full ${EVIDENCE_DOT[e.status]} hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition-all cursor-pointer`}
-                        title={`${e.status} — click to cycle`}
-                        data-testid="evidence-status-btn"
-                      />
-                    ) : (
-                      <span className={`flex-shrink-0 w-1.5 h-1.5 rounded-full ${EVIDENCE_DOT[e.status]}`} />
-                    )}
-                    <span className={`flex-1 leading-snug ${EVIDENCE_TEXT[e.status]}`}>
-                      {e.item}
-                    </span>
-                    {e.gateBlocking && e.status !== 'provided' && (
-                      <span className="text-[9px] text-red-400 font-medium flex-shrink-0">GATE</span>
-                    )}
-                    <span className={`text-[10px] flex-shrink-0 ${EVIDENCE_TEXT[e.status]}`}>
-                      {e.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Gate-blocking callout (collapsed mode only) */}
-            {!showEvidenceDetail && evidence.gateBlockingMissing.length > 0 && (
+            {/* Gate-blocking callout only */}
+            {evidence.gateBlockingMissing.length > 0 && (
               <div className="mt-1.5 bg-red-50/50 border border-red-100 rounded-lg px-2.5 py-1.5">
                 <span className="text-[10px] font-medium text-red-600 uppercase tracking-wide">Gate-blocking (missing)</span>
-                {evidence.gateBlockingMissing.map((e, i) => (
+                {evidence.gateBlockingMissing.slice(0, 3).map((e, i) => (
                   <div key={i} className="text-red-600 mt-0.5 leading-snug">- {e.item}</div>
                 ))}
               </div>
@@ -302,44 +268,20 @@ export function CopilotPanel({
           </div>
         )}
 
-        {/* Gate status */}
-        {hasGates && (
-          <div data-testid="copilot-gates">
-            <span className="font-medium text-gray-700">Stage gates</span>
-            <div className="mt-1 space-y-1">
-              {gates.filter(g => g.status !== 'unknown').map((g, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${GATE_STATUS_STYLE[g.status] ?? GATE_STATUS_STYLE.unknown}`}>
-                    {g.status.replace(/_/g, ' ')}
-                  </span>
-                  <span className="text-gray-600 truncate">{g.gate}</span>
-                  {g.blockerCount > 0 && (
-                    <span className="text-red-400 flex-shrink-0">({g.blockerCount} blocker{g.blockerCount > 1 ? 's' : ''})</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Active blockers */}
+        {/* Active blockers — compact (detail in workspace) */}
         {hasBlockers && (
           <div data-testid="copilot-blockers">
             <span className="font-medium text-gray-700">Active blockers</span>
-            <div className="mt-1 space-y-1">
-              {blockers.items.filter(b => !b.resolved).slice(0, 3).map((b, i) => (
+            <span className="text-red-500 ml-1 text-[10px]">({blockers.activeCount})</span>
+            <div className="mt-1 space-y-0.5">
+              {blockers.items.filter(b => !b.resolved).slice(0, 2).map((b, i) => (
                 <div key={i} className="flex items-start gap-1.5">
-                  <span className={`flex-shrink-0 mt-0.5 ${SEVERITY_STYLE[b.severity] ?? 'text-gray-500'}`}>
-                    {b.severity === 'critical' ? '!!' : '!'}
-                  </span>
-                  <div className="leading-snug">
-                    <span className="text-gray-700">{b.blocker}</span>
-                    <span className="text-gray-400 ml-1">blocks {b.blocks}</span>
-                  </div>
+                  <span className="text-red-400 flex-shrink-0 mt-0.5">!</span>
+                  <span className="text-gray-700 leading-snug">{b.blocker}</span>
                 </div>
               ))}
-              {blockers.activeCount > 3 && (
-                <span className="text-gray-400 text-[10px]">+{blockers.activeCount - 3} more</span>
+              {blockers.activeCount > 2 && (
+                <span className="text-gray-400 text-[10px]">+{blockers.activeCount - 2} more in workspace</span>
               )}
             </div>
           </div>
