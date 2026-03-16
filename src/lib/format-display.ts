@@ -70,6 +70,7 @@ export function buildVisibleContextIdentity(context: {
   label?: string | null;
   workflowType?: string | null;
   technology?: string | null;
+  technologies?: string[];
   stage?: string | null;
   jurisdiction?: string | null;
 }, packTechnologies?: string[]): VisibleContextIdentity {
@@ -77,6 +78,8 @@ export function buildVisibleContextIdentity(context: {
   let technologyLabel: string;
   if (packTechnologies && packTechnologies.length > 0) {
     technologyLabel = formatTechList(packTechnologies);
+  } else if (context.technologies && context.technologies.length > 0) {
+    technologyLabel = formatTechList(context.technologies);
   } else if (context.technology) {
     // Handle comma-separated or single technology strings
     const techs = context.technology.includes(',')

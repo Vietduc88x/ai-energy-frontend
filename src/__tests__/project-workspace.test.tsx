@@ -15,6 +15,7 @@ function makePanel(overrides?: Partial<CopilotPanelData>): CopilotPanelData {
       label: 'Lender TDD Planning — solar pv — vietnam — feasibility',
       workflowType: 'lender_tdd_planning',
       technology: 'solar_pv',
+      technologies: ['solar_pv'],
       jurisdiction: 'vietnam',
       stage: 'feasibility',
       contextAction: 'reused',
@@ -106,13 +107,18 @@ describe('ProjectWorkspace — rendering', () => {
 
   it('shows context label', () => {
     render(<ProjectWorkspace panel={makePanel()} onClose={() => {}} />);
-    expect(screen.getByText(/Lender TDD Planning/)).toBeTruthy();
+    expect(screen.getAllByText(/Lender Tdd Planning/).length).toBeGreaterThan(0);
   });
 
   it('shows workflow metadata', () => {
     render(<ProjectWorkspace panel={makePanel()} onClose={() => {}} />);
-    expect(screen.getByText('lender tdd planning')).toBeTruthy();
+    expect(screen.getByText('Lender Tdd Planning')).toBeTruthy();
     expect(screen.getByText('vietnam')).toBeTruthy();
+  });
+
+  it('prefers structured hybrid technology identity', () => {
+    render(<ProjectWorkspace panel={makePanel({ context: { ...makePanel().context, technologies: ['solar_pv', 'bess'] } })} onClose={() => {}} />);
+    expect(screen.getAllByText(/Solar PV \+ BESS/).length).toBeGreaterThan(0);
   });
 
   it('shows turn count', () => {

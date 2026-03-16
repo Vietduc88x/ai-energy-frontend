@@ -15,6 +15,7 @@ function makePanel(overrides?: Partial<CopilotPanelData>): CopilotPanelData {
       label: 'Lender TDD Planning — solar pv — vietnam — feasibility',
       workflowType: 'lender_tdd_planning',
       technology: 'solar_pv',
+      technologies: ['solar_pv'],
       jurisdiction: 'vietnam',
       stage: 'feasibility',
       contextAction: 'reused',
@@ -81,7 +82,7 @@ describe('CopilotPanel — context identity', () => {
 
   it('shows the context label', () => {
     render(<CopilotPanel panel={makePanel()} />);
-    expect(screen.getByText(/Lender TDD Planning/)).toBeTruthy();
+    expect(screen.getAllByText(/Lender Tdd Planning/).length).toBeGreaterThan(0);
   });
 
   it('shows Continuing badge for reused context', () => {
@@ -102,6 +103,11 @@ describe('CopilotPanel — context identity', () => {
   it('shows turn count for multi-turn contexts', () => {
     render(<CopilotPanel panel={makePanel()} />);
     expect(screen.getByText('Turn 3')).toBeTruthy();
+  });
+
+  it('prefers structured technologies for visible title', () => {
+    render(<CopilotPanel panel={makePanel({ context: { ...makePanel().context, technologies: ['solar_pv', 'bess'] } })} />);
+    expect(screen.getAllByText(/Solar PV \+ BESS/).length).toBeGreaterThan(0);
   });
 });
 
@@ -167,19 +173,25 @@ describe('CopilotPanel — evidence', () => {
   });
 });
 
+describe('CopilotPanel — compact mode', () => {
+  it('shows critical-now summary and hides detailed evidence when compact', () => {
+    render(<CopilotPanel panel={makePanel()} compact />);
+    expect(screen.getByTestId('copilot-critical-now')).toBeTruthy();
+    expect(screen.queryByTestId('copilot-evidence')).toBeNull();
+  });
+});
+
 // ─── Gates ──────────────────────────────────────────────────────────────────
 
 describe('CopilotPanel — gates', () => {
-  it('renders gates with status', () => {
+  it('does not render a separate gates section in the slimmed panel', () => {
     render(<CopilotPanel panel={makePanel()} />);
-    expect(screen.getByTestId('copilot-gates')).toBeTruthy();
-    expect(screen.getByText('partially met')).toBeTruthy();
-    expect(screen.getByText('Financial Close Readiness')).toBeTruthy();
+    expect(screen.queryByTestId('copilot-gates')).toBeNull();
   });
 
-  it('shows blocker count on gates', () => {
+  it('keeps gate-blocking messaging in the evidence callout instead', () => {
     render(<CopilotPanel panel={makePanel()} />);
-    expect(screen.getByText('(2 blockers)')).toBeTruthy();
+    expect(screen.getByText('Gate-blocking (missing)')).toBeTruthy();
   });
 
   it('hides gates section when all unknown', () => {
@@ -302,35 +314,11 @@ describe('CopilotPanel — evidence interaction', () => {
     expect(screen.getByTestId('evidence-toggle')).toBeTruthy();
   });
 
-  it('expands evidence detail on toggle click', () => {
-    render(<CopilotPanel panel={makePanel()} onUpdateEvidence={() => {}} />);
+  it('toggles the evidence summary view on click', () => {
+    render(<CopilotPanel panel={makePanel()} />);
+    expect(screen.getByText('2 missing')).toBeTruthy();
     fireEvent.click(screen.getByTestId('evidence-toggle'));
-    expect(screen.getByTestId('evidence-detail')).toBeTruthy();
-  });
-
-  it('shows clickable evidence status buttons when onUpdateEvidence provided', () => {
-    render(<CopilotPanel panel={makePanel()} onUpdateEvidence={() => {}} />);
-    fireEvent.click(screen.getByTestId('evidence-toggle'));
-    const buttons = screen.getAllByTestId('evidence-status-btn');
-    expect(buttons.length).toBe(4);
-  });
-
-  it('cycles evidence status on click (missing → partial)', () => {
-    const onUpdate = vi.fn();
-    render(<CopilotPanel panel={makePanel()} onUpdateEvidence={onUpdate} />);
-    fireEvent.click(screen.getByTestId('evidence-toggle'));
-    const buttons = screen.getAllByTestId('evidence-status-btn');
-    fireEvent.click(buttons[1]); // Environmental permits: missing → partial
-    expect(onUpdate).toHaveBeenCalledWith('Environmental permits', 'partial');
-  });
-
-  it('cycles evidence status (provided → missing, wraps around)', () => {
-    const onUpdate = vi.fn();
-    render(<CopilotPanel panel={makePanel()} onUpdateEvidence={onUpdate} />);
-    fireEvent.click(screen.getByTestId('evidence-toggle'));
-    const buttons = screen.getAllByTestId('evidence-status-btn');
-    fireEvent.click(buttons[0]); // Energy yield report: provided → wraps to missing
-    expect(onUpdate).toHaveBeenCalledWith('Energy yield report', 'missing');
+    expect(screen.queryByText('2 missing')).toBeNull();
   });
 });
 

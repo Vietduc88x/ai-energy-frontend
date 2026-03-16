@@ -488,6 +488,7 @@ export interface CopilotPanel {
     label: string;
     workflowType: string;
     technology: string | null;
+    technologies?: string[];
     jurisdiction: string | null;
     stage: string | null;
     contextAction: 'reused' | 'new' | 'explicit';

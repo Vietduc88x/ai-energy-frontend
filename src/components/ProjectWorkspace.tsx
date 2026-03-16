@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { CopilotPanel as CopilotPanelData, ContextSummary, EvidenceStatus } from '@/lib/api-client';
-import { formatTechLabel, formatContextLabel, formatEnumLabel } from '@/lib/format-display';
+import { buildVisibleContextIdentity, formatContextLabel, formatEnumLabel } from '@/lib/format-display';
 
 // ─── Status styling ──────────────────────────────────────────────────────────
 
@@ -77,6 +77,7 @@ export function ProjectWorkspace({
   onClose,
 }: ProjectWorkspaceProps) {
   const { context, progress, evidence, gates, blockers, allPlanItems, recentChanges } = panel;
+  const visibleIdentity = buildVisibleContextIdentity(context);
   const [expandedSections, setExpandedSections] = useState<Set<Section>>(
     new Set(['plan', 'evidence', 'gates', 'blockers', 'changes']),
   );
@@ -109,15 +110,15 @@ export function ProjectWorkspace({
             </svg>
           </button>
         </div>
-        <div className="font-medium text-sm text-gray-800 leading-snug">{formatContextLabel(context.label)}</div>
+        <div className="font-medium text-sm text-gray-800 leading-snug">{visibleIdentity.title || formatContextLabel(context.label)}</div>
         <div className="flex items-center gap-2 mt-1.5 text-[10px]">
-          <span className="text-gray-400">{context.workflowType.replace(/_/g, ' ')}</span>
+          <span className="text-gray-400">{formatEnumLabel(context.workflowType)}</span>
           {context.technology && <span className="text-gray-300">·</span>}
-          {context.technology && <span className="text-gray-400">{formatTechLabel(context.technology)}</span>}
+          {visibleIdentity.technologyLabel && <span className="text-gray-400">{visibleIdentity.technologyLabel}</span>}
           {context.jurisdiction && <span className="text-gray-300">·</span>}
           {context.jurisdiction && <span className="text-gray-500 font-medium">{context.jurisdiction}</span>}
           {context.stage && <span className="text-gray-300">·</span>}
-          {context.stage && <span className="text-gray-400">{context.stage.replace(/_/g, ' ')}</span>}
+          {context.stage && <span className="text-gray-400">{formatEnumLabel(context.stage)}</span>}
         </div>
         <div className="flex items-center gap-2 mt-1.5 text-[10px]">
           <span className="text-gray-400">Turn {context.turnCount}</span>

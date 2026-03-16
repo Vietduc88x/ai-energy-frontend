@@ -583,6 +583,7 @@ function ComparePageContent() {
                       <AssistantMessage
                         content={msg.content}
                         meta={msg.meta}
+                        compactCopilot={workspaceOpen}
                         recentContexts={recentContexts}
                         onSwitchContext={handleSwitchContext}
                         onNewContext={handleNewContext}
@@ -773,9 +774,10 @@ function truncateToSentences(text: string, n: number): string {
 
 // ─── Markdown-lite renderer for assistant messages ──────────────────────────
 
-function AssistantMessage({ content, meta, recentContexts, onSwitchContext, onNewContext, onUpdateEvidence, onMarkActionDone }: {
+function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwitchContext, onNewContext, onUpdateEvidence, onMarkActionDone }: {
   content: string;
   meta?: ChatMeta;
+  compactCopilot?: boolean;
   recentContexts?: ContextSummary[];
   onSwitchContext?: (contextId: string) => void;
   onNewContext?: () => void;
@@ -910,6 +912,7 @@ function AssistantMessage({ content, meta, recentContexts, onSwitchContext, onNe
       {copilotPanel && (
         <CopilotPanel
           panel={copilotPanel}
+          compact={compactCopilot}
           recentContexts={recentContexts}
           onSwitchContext={onSwitchContext}
           onNewContext={onNewContext}

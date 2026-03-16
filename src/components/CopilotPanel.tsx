@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { CopilotPanel as CopilotPanelData, ContextSummary, EvidenceStatus } from '@/lib/api-client';
-import { formatContextLabel } from '@/lib/format-display';
+import { buildVisibleContextIdentity, formatContextLabel } from '@/lib/format-display';
 
 // ─── Status colors ──────────────────────────────────────────────────────────
 
@@ -45,6 +45,7 @@ const EVIDENCE_CYCLE: EvidenceStatus[] = ['missing', 'partial', 'provided'];
 
 export interface CopilotPanelProps {
   panel: CopilotPanelData;
+  compact?: boolean;
   /** Recent contexts for the context switcher */
   recentContexts?: ContextSummary[];
   /** Called when user switches to a different context */
@@ -61,6 +62,7 @@ export interface CopilotPanelProps {
 
 export function CopilotPanel({
   panel,
+  compact = false,
   recentContexts,
   onSwitchContext,
   onNewContext,
@@ -68,6 +70,7 @@ export function CopilotPanel({
   onMarkActionDone,
 }: CopilotPanelProps) {
   const { context, progress, evidence, gates, blockers, hasChanges } = panel;
+  const visibleIdentity = buildVisibleContextIdentity(context);
   const actionStyle = CONTEXT_ACTION_LABEL[context.contextAction] ?? CONTEXT_ACTION_LABEL.new;
 
   const [showContextMenu, setShowContextMenu] = useState(false);
@@ -77,6 +80,8 @@ export function CopilotPanel({
   const hasEvidence = evidence.total > 0;
   const hasGates = gates.length > 0 && gates.some(g => g.status !== 'unknown');
   const hasBlockers = blockers.activeCount > 0;
+  const mainBlocker = blockers.items.find(b => !b.resolved)?.blocker ?? null;
+  const topEvidenceNeed = evidence.gateBlockingMissing[0]?.item ?? null;
 
   const otherContexts = recentContexts?.filter(c => c.id !== context.projectContextId) ?? [];
   const hasContextSwitcher = otherContexts.length > 0 || !!onNewContext;
@@ -98,7 +103,7 @@ export function CopilotPanel({
           )}
           {actionStyle.text}
         </span>
-        <span className="font-medium text-gray-800 truncate">{formatContextLabel(context.label)}</span>
+        <span className="font-medium text-gray-800 truncate">{visibleIdentity.title || formatContextLabel(context.label)}</span>
 
         <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
           {context.turnCount > 1 && (
@@ -162,7 +167,19 @@ export function CopilotPanel({
       </div>
 
       {/* ── Body: Progress + Evidence + Gates + Blockers ── */}
-      <div className="px-4 py-3 space-y-3">
+      <div className={`px-4 py-3 ${compact ? 'space-y-2' : 'space-y-3'}`}>
+        {compact && (mainBlocker || topEvidenceNeed) && (
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-[11px] text-gray-600" data-testid="copilot-critical-now">
+            <span className="font-semibold text-gray-700">Critical now:</span>
+            {mainBlocker && <span className="ml-1">{mainBlocker}</span>}
+            {topEvidenceNeed && (
+              <span className="ml-1 text-gray-500">
+                {mainBlocker ? '•' : ''}
+                {' '}Need: {topEvidenceNeed}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Progress bar + next actions with mark-done */}
         {hasProgress && (
@@ -214,10 +231,13 @@ export function CopilotPanel({
         )}
 
         {/* Evidence — compact count only (detail in workspace) */}
-        {hasEvidence && (
+        {hasEvidence && !compact && (
           <div data-testid="copilot-evidence">
             <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-700"
+              <button
+                type="button"
+                onClick={() => setShowEvidenceDetail(v => !v)}
+                className="font-medium text-gray-700"
                 data-testid="evidence-toggle"
               >
                 Evidence
@@ -270,7 +290,7 @@ export function CopilotPanel({
         )}
 
         {/* Active blockers — compact (detail in workspace) */}
-        {hasBlockers && (
+        {hasBlockers && !compact && (
           <div data-testid="copilot-blockers">
             <span className="font-medium text-gray-700">Active blockers</span>
             <span className="text-red-500 ml-1 text-[10px]">({blockers.activeCount})</span>
