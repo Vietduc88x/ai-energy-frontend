@@ -894,12 +894,16 @@ function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwi
   const isVisualMode = mode === 'visual';
   const hasVisuals = (meta?.visuals?.length ?? 0) > 0;
 
-  // In compact/visual mode, truncate narrative to short caption
+  // Truncate narrative when structured deliverables already convey the main points
+  const hasStructuredBrief = !!(meta?.decisionBrief?.briefType);
+  const hasGuidancePack = !!(meta?.guidancePack);
   const displayContent = isVisualMode && content.length > 0
     ? truncateToSentences(content, 2)
     : isCompactMode && content.length > 0
       ? truncateToSentences(content, 4)
-      : content;
+      : (hasStructuredBrief || hasGuidancePack) && content.length > 0
+        ? truncateToSentences(content, 4)
+        : content;
 
   // Copilot panel: show when we have a visible copilot panel in meta
   const copilotPanel = meta?.copilotPanel && meta.copilotPanel.visible === true

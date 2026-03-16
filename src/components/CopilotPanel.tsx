@@ -277,13 +277,16 @@ export function CopilotPanel({
               </div>
             )}
 
-            {/* Gate-blocking callout only */}
+            {/* Gate-blocking callout — top 5 only, rest deferred to workspace */}
             {evidence.gateBlockingMissing.length > 0 && (
               <div className="mt-1.5 bg-red-50/50 border border-red-100 rounded-lg px-2.5 py-1.5">
                 <span className="text-[10px] font-medium text-red-600 uppercase tracking-wide">Gate-blocking (missing)</span>
-                {evidence.gateBlockingMissing.slice(0, 3).map((e, i) => (
+                {evidence.gateBlockingMissing.slice(0, 5).map((e, i) => (
                   <div key={i} className="text-red-600 mt-0.5 leading-snug">- {e.item}</div>
                 ))}
+                {evidence.gateBlockingMissing.length > 5 && (
+                  <div className="text-red-400 text-[10px] mt-0.5">+{evidence.gateBlockingMissing.length - 5} more in workspace</div>
+                )}
               </div>
             )}
           </div>
