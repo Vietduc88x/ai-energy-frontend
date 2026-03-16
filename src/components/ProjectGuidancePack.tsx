@@ -106,6 +106,26 @@ export function ProjectGuidanceCard({ data }: { data: ProjectGuidancePack }) {
 
       <div className="px-5 py-4 space-y-5">
 
+        {/* ── Decision Progression (v2.1) ──────────────────────────── */}
+        {data.issueTimeline && data.issueTimeline.decisionStance !== 'unchanged' && (
+          <div className={`rounded-md px-3 py-2 text-[11px] ${
+            data.issueTimeline.decisionStance === 'improved' ? 'bg-green-50 text-green-800' :
+            data.issueTimeline.decisionStance === 'weakened' ? 'bg-red-50 text-red-800' :
+            'bg-amber-50 text-amber-800'
+          }`}>
+            <p className="font-medium">{data.issueTimeline.stanceReason}</p>
+            {data.issueTimeline.mainBlockerNow && data.issueTimeline.decisionStance !== 'improved' && (
+              <p className="text-[10px] mt-0.5 opacity-80">Main blocker: {truncate(data.issueTimeline.mainBlockerNow, 80)}</p>
+            )}
+            {data.issueTimeline.resolvedSinceLast.length > 0 && (
+              <p className="text-[10px] mt-0.5 opacity-80">
+                Resolved: {data.issueTimeline.resolvedSinceLast.slice(0, 2).join(', ')}
+                {data.issueTimeline.resolvedSinceLast.length > 2 ? ` +${data.issueTimeline.resolvedSinceLast.length - 2} more` : ''}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* ── Critical Now ─────────────────────────────────────────── */}
         {exec && (exec.criticalItems.length > 0 || exec.topBlocker || exec.topRisk) && (
           <div>

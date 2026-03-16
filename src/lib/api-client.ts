@@ -427,6 +427,16 @@ export interface ProjectGuidancePack {
     url?: string | null;
   }>;
   caveat?: string | null;
+  issueTimeline?: {
+    resolvedSinceLast: string[];
+    evidenceReceivedSinceLast: string[];
+    stillBlocking: string[];
+    mainBlockerNow: string | null;
+    decisionStance: 'improved' | 'weakened' | 'unchanged' | 'still_conditional';
+    stanceReason: string;
+    openCriticalCount: number;
+    resolvedCount: number;
+  };
   workflowIssues?: Array<{
     id: string;
     title: string;
