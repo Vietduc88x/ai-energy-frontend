@@ -559,7 +559,23 @@ export interface ChatMeta {
   hasGuidanceData?: boolean;
   visuals?: VisualDeliverable[];
   decisionBrief?: import('@/components/DecisionBrief').DecisionBriefData;
+  decisionPacket?: DecisionPacketData;
   copilotPanel?: CopilotPanel | { visible: false };
+}
+
+// ─── Decision Packet ─────────────────────────────────────────────────────────
+
+export interface DecisionPacketData {
+  stance: 'proceed' | 'proceed_conditionally' | 'hold' | 'insufficient_basis';
+  confidence: 'high' | 'medium' | 'low';
+  audience: string;
+  headline: string;
+  summaryLine: string;
+  topReasons: string[];
+  topBlockers: Array<{ title: string; severity: string; impact?: string | null }>;
+  topNeeds: Array<{ type: 'evidence' | 'action'; label: string; owner?: string | null; gateBlocking?: boolean }>;
+  nextGate?: string | null;
+  supportingArtifacts: string[];
 }
 
 /**

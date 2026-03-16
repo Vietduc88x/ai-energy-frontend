@@ -10,6 +10,7 @@ import { ProjectWorkspace } from '@/components/ProjectWorkspace';
 import { PolicyAnswer } from '@/components/PolicyAnswer';
 import { ProjectGuidanceCard } from '@/components/ProjectGuidancePack';
 import { DecisionBrief } from '@/components/DecisionBrief';
+import { DecisionPacket } from '@/components/DecisionPacket';
 import { QuotaModal } from '@/components/quota-modal';
 import { BenchmarkChart } from '@/components/deliverables/BenchmarkChart';
 import { PolicyTimeline } from '@/components/deliverables/PolicyTimeline';
@@ -905,17 +906,20 @@ function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwi
   const showGuidancePack = showProductCards && meta?.guidancePack && !isLenderWorkflow;
 
   // Truncate narrative when structured deliverables already convey the main points
+  const hasDecisionPacket = !!(meta?.decisionPacket);
   const hasStructuredBrief = !!(meta?.decisionBrief?.briefType);
   const hasGuidancePack = !!(meta?.guidancePack);
   const displayContent = isVisualMode && content.length > 0
     ? truncateToSentences(content, 2)
     : isCompactMode && content.length > 0
       ? truncateToSentences(content, 4)
-      : isLenderWorkflow && (hasStructuredBrief || hasGuidancePack) && content.length > 0
+      : hasDecisionPacket && content.length > 0
         ? truncateToSentences(content, 2)
-        : (hasStructuredBrief || hasGuidancePack) && content.length > 0
-          ? truncateToSentences(content, 3)
-        : content;
+        : isLenderWorkflow && (hasStructuredBrief || hasGuidancePack) && content.length > 0
+          ? truncateToSentences(content, 2)
+          : (hasStructuredBrief || hasGuidancePack) && content.length > 0
+            ? truncateToSentences(content, 3)
+            : content;
 
   // Copilot panel: show when we have a visible copilot panel in meta
   const copilotPanel = meta?.copilotPanel && meta.copilotPanel.visible === true
@@ -937,6 +941,13 @@ function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwi
         />
       )}
 
+      {/* Decision Packet — compact decision-first lead for workflow queries */}
+      {showProductCards && meta?.decisionPacket && (
+        <div className="mb-3">
+          <DecisionPacket data={meta.decisionPacket} />
+        </div>
+      )}
+
       {/* Structured policy briefing card — only in report/brief modes */}
       {showProductCards && meta?.policyAnswer && (
         <div className="mb-3">
@@ -944,17 +955,17 @@ function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwi
         </div>
       )}
 
-      {/* Structured guidance pack — only in report/brief modes */}
-      {showGuidancePack && meta?.guidancePack && (
+      {/* Decision Brief — shown only when no packet (packet replaces it) */}
+      {showProductCards && meta?.decisionBrief?.briefType && !meta?.decisionPacket && (
         <div className="mb-3">
-          <ProjectGuidanceCard data={meta.guidancePack} />
+          <DecisionBrief data={meta.decisionBrief} />
         </div>
       )}
 
-      {/* Decision Brief card — structured decision-support output */}
-      {showProductCards && meta?.decisionBrief?.briefType && (
+      {/* Structured guidance pack — demoted when packet present */}
+      {showGuidancePack && meta?.guidancePack && !meta?.decisionPacket && (
         <div className="mb-3">
-          <DecisionBrief data={meta.decisionBrief} />
+          <ProjectGuidanceCard data={meta.guidancePack} />
         </div>
       )}
 
