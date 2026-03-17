@@ -12,6 +12,7 @@ import { ProjectGuidanceCard } from '@/components/ProjectGuidancePack';
 import { DecisionBrief } from '@/components/DecisionBrief';
 import { DecisionPacket } from '@/components/DecisionPacket';
 import { EpcReviewMemo } from '@/components/EpcReviewMemo';
+import { ExpertJudgmentMemo } from '@/components/ExpertJudgmentMemo';
 import { QuotaModal } from '@/components/quota-modal';
 import { BenchmarkChart } from '@/components/deliverables/BenchmarkChart';
 import { PolicyTimeline } from '@/components/deliverables/PolicyTimeline';
@@ -860,11 +861,14 @@ function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwi
   const workflowType = copilotContext?.workflowType ?? '';
   const isLenderWorkflow = workflowType === 'lender_tdd_planning';
   const isEpcMode = !!(meta?.epcReviewMemo);
+  const hasJudgmentMemo = !!(meta?.expertJudgmentMemo);
   const filteredVisuals = (meta?.visuals ?? []).filter((v) => {
     // In lender mode, hide document matrix
     if (isLenderWorkflow && v.visualType === 'document_request_matrix') return false;
-    // In EPC memo mode, hide TDD checklist (EPC questions are the main artifact)
-    if (isEpcMode && v.visualType === 'checklist_table') return false;
+    // In EPC/judgment mode, hide TDD checklist
+    if ((isEpcMode || hasJudgmentMemo) && v.visualType === 'checklist_table') return false;
+    // When judgment memo exists, demote EPC questions (judgment cards replace them)
+    if (hasJudgmentMemo && v.visualType === 'epc_questions') return false;
     return true;
   });
   const hasFilteredVisuals = filteredVisuals.length > 0;
@@ -913,8 +917,15 @@ function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwi
         </div>
       )}
 
-      {/* EPC Review Memo — judgment-led contract review summary */}
-      {meta?.epcReviewMemo && (
+      {/* Expert Judgment Memo — judgment-first rendering for all serious workflows */}
+      {meta?.expertJudgmentMemo && (
+        <div className="mb-3">
+          <ExpertJudgmentMemo data={meta.expertJudgmentMemo} />
+        </div>
+      )}
+
+      {/* EPC Review Memo — fallback when no expert judgments available */}
+      {meta?.epcReviewMemo && !meta?.expertJudgmentMemo && (
         <div className="mb-3">
           <EpcReviewMemo data={meta.epcReviewMemo} />
         </div>

@@ -561,7 +561,31 @@ export interface ChatMeta {
   decisionBrief?: import('@/components/DecisionBrief').DecisionBriefData;
   decisionPacket?: DecisionPacketData;
   epcReviewMemo?: EpcReviewMemoData;
+  expertJudgmentMemo?: ExpertJudgmentMemoData;
   copilotPanel?: CopilotPanel | { visible: false };
+}
+
+// ─── Expert Judgment Memo ────────────────────────────────────────────────────
+
+export interface ExpertJudgmentData {
+  id: string;
+  theme: string;
+  audience: string;
+  severity: 'critical' | 'high' | 'medium';
+  judgment: string;
+  rationale: string;
+  requiredProof: string[];
+  implications: string[];
+  supportingChecks: string[];
+  sourceConfidence: string;
+}
+
+export interface ExpertJudgmentMemoData {
+  workflowMode: string;
+  memoTitle: string;
+  recommendation: string;
+  judgments: ExpertJudgmentData[];
+  supportingArtifactCount: number;
 }
 
 // ─── EPC Review Memo ─────────────────────────────────────────────────────────
