@@ -11,6 +11,7 @@ import { PolicyAnswer } from '@/components/PolicyAnswer';
 import { ProjectGuidanceCard } from '@/components/ProjectGuidancePack';
 import { DecisionBrief } from '@/components/DecisionBrief';
 import { DecisionPacket } from '@/components/DecisionPacket';
+import { EpcReviewMemo } from '@/components/EpcReviewMemo';
 import { QuotaModal } from '@/components/quota-modal';
 import { BenchmarkChart } from '@/components/deliverables/BenchmarkChart';
 import { PolicyTimeline } from '@/components/deliverables/PolicyTimeline';
@@ -897,9 +898,12 @@ function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwi
   const copilotContext = meta?.copilotPanel && meta.copilotPanel.visible === true ? meta.copilotPanel.context : null;
   const workflowType = copilotContext?.workflowType ?? '';
   const isLenderWorkflow = workflowType === 'lender_tdd_planning';
+  const isEpcMode = !!(meta?.epcReviewMemo);
   const filteredVisuals = (meta?.visuals ?? []).filter((v) => {
-    if (!isLenderWorkflow) return true;
-    if (v.visualType === 'document_request_matrix') return false;
+    // In lender mode, hide document matrix
+    if (isLenderWorkflow && v.visualType === 'document_request_matrix') return false;
+    // In EPC memo mode, hide TDD checklist (EPC questions are the main artifact)
+    if (isEpcMode && v.visualType === 'checklist_table') return false;
     return true;
   });
   const hasFilteredVisuals = filteredVisuals.length > 0;
@@ -945,6 +949,13 @@ function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwi
       {meta?.decisionPacket && (
         <div className="mb-3">
           <DecisionPacket data={meta.decisionPacket} />
+        </div>
+      )}
+
+      {/* EPC Review Memo — judgment-led contract review summary */}
+      {meta?.epcReviewMemo && (
+        <div className="mb-3">
+          <EpcReviewMemo data={meta.epcReviewMemo} />
         </div>
       )}
 

@@ -560,7 +560,18 @@ export interface ChatMeta {
   visuals?: VisualDeliverable[];
   decisionBrief?: import('@/components/DecisionBrief').DecisionBriefData;
   decisionPacket?: DecisionPacketData;
+  epcReviewMemo?: EpcReviewMemoData;
   copilotPanel?: CopilotPanel | { visible: false };
+}
+
+// ─── EPC Review Memo ─────────────────────────────────────────────────────────
+
+export interface EpcReviewMemoData {
+  recommendation: string;
+  contractRisks: Array<{ title: string; judgment: string }>;
+  requiredProofs: Array<{ label: string; owner?: string | null; gateBlocking?: boolean }>;
+  priorityQuestions: string[];
+  themeSummaries: Array<{ theme: string; judgment: string; keyChecks: string[] }>;
 }
 
 // ─── Decision Packet ─────────────────────────────────────────────────────────
