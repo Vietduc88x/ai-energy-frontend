@@ -575,7 +575,7 @@ function ComparePageContent() {
                       <AssistantMessage
                         content={msg.content}
                         meta={msg.meta}
-                        compactCopilot={false}
+                        compactCopilot={!!(msg.meta?.expertJudgmentMemo)}
                         recentContexts={recentContexts}
                         onSwitchContext={handleSwitchContext}
                         onNewContext={handleNewContext}
@@ -722,18 +722,30 @@ export default function ComparePage() {
 
 /** Truncate text to roughly `n` sentences, preserving whole sentences. */
 function truncateToSentences(text: string, n: number): string {
-  // Match sentence-ending punctuation followed by whitespace or end-of-string
+  // Match real sentence endings — not numbered list items like "1." or "2."
   const re = /[.!?](?:\s|$)/g;
   let count = 0;
   let match: RegExpExecArray | null;
   while ((match = re.exec(text)) !== null) {
+    // Skip numbered list items: "1." "2." etc.
+    if (match.index > 0) {
+      const before = text.slice(Math.max(0, match.index - 3), match.index);
+      if (/\d$/.test(before.trim())) continue;
+    }
     count++;
     if (count >= n) {
-      return text.slice(0, match.index + 1);
+      let result = text.slice(0, match.index + 1);
+      // Strip trailing incomplete sections (headers with nothing after them)
+      result = result.replace(/\n+\*\*[^*]+\*\*:?\s*$/, '');
+      result = result.replace(/\n+(?:Recommended next steps|Before signature|Next actions|Critical actions):?\s*$/i, '');
+      return result.trim();
     }
   }
-  // Fewer than n sentences — return full text
-  return text;
+  // Fewer than n sentences — return full text, still strip incomplete trailing sections
+  let result = text;
+  result = result.replace(/\n+\*\*(?:Recommended next steps|Before signature|Next actions|Critical actions)[^*]*\*\*:?\s*\n\s*\d+\.\s*$/i, '');
+  result = result.replace(/\n+(?:Recommended next steps|Before signature|Next actions|Critical actions):?\s*\n\s*\d+\.\s*$/i, '');
+  return result.trim();
 }
 
 // ─── Markdown-lite renderer for assistant messages ──────────────────────────

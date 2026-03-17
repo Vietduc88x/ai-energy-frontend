@@ -580,11 +580,19 @@ export interface ExpertJudgmentData {
   sourceConfidence: string;
 }
 
+export interface ClosingActionData {
+  action: string;
+  owner?: string | null;
+  priority: 'critical' | 'important' | 'standard';
+}
+
 export interface ExpertJudgmentMemoData {
   workflowMode: string;
   memoTitle: string;
   recommendation: string;
   judgments: ExpertJudgmentData[];
+  closingTitle?: string;
+  closingActions?: ClosingActionData[];
   supportingArtifactCount: number;
 }
 

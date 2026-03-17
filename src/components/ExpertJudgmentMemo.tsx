@@ -119,10 +119,26 @@ export function ExpertJudgmentMemo({ data }: { data: ExpertJudgmentMemoData }) {
           </button>
         )}
 
-        {data.supportingArtifactCount > 0 && (
-          <p className="text-[10px] text-gray-400 mt-1">
-            {data.supportingArtifactCount} supporting items available in detail view below.
-          </p>
+        {/* Closing Actions — role-specific next steps */}
+        {(data.closingActions?.length ?? 0) > 0 && (
+          <div className="pt-2 border-t border-gray-100">
+            <h4 className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+              {data.closingTitle || 'Next Actions'}
+            </h4>
+            <div className="space-y-1">
+              {data.closingActions!.map((a, i) => (
+                <div key={i} className="flex items-start gap-2 text-xs text-gray-700">
+                  <span className={`flex-shrink-0 mt-0.5 font-bold text-[10px] ${
+                    a.priority === 'critical' ? 'text-red-400' : a.priority === 'important' ? 'text-amber-400' : 'text-gray-400'
+                  }`}>{i + 1}.</span>
+                  <span>
+                    {a.action}
+                    {a.owner && <span className="text-gray-400 ml-1">({a.owner})</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>
