@@ -941,8 +941,8 @@ function AssistantMessage({ content, meta, compactCopilot, recentContexts, onSwi
         />
       )}
 
-      {/* Decision Packet — compact decision-first lead for workflow queries */}
-      {showProductCards && meta?.decisionPacket && (
+      {/* Decision Packet — compact decision-first lead for all workflow queries */}
+      {meta?.decisionPacket && (
         <div className="mb-3">
           <DecisionPacket data={meta.decisionPacket} />
         </div>
