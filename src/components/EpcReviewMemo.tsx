@@ -6,6 +6,7 @@ export function EpcReviewMemo({ data }: { data: EpcReviewMemoData }) {
   const hasRisks = data.contractRisks.length > 0;
   const hasProofs = data.requiredProofs.length > 0;
   const hasQuestions = data.priorityQuestions.length > 0;
+  const hasThemes = (data.themeSummaries?.length ?? 0) > 0;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white overflow-hidden" data-testid="epc-review-memo">
@@ -50,6 +51,35 @@ export function EpcReviewMemo({ data }: { data: EpcReviewMemoData }) {
                     {p.owner && <span className="text-gray-400 ml-1">({p.owner})</span>}
                     {p.gateBlocking && <span className="text-[9px] text-red-400 font-semibold ml-1">GATE</span>}
                   </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Theme Judgments */}
+        {hasThemes && (
+          <div>
+            <h4 className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+              Theme Judgments
+            </h4>
+            <div className="space-y-2">
+              {data.themeSummaries.map((ts, i) => (
+                <div key={i}>
+                  <div className="text-xs">
+                    <span className="font-semibold text-gray-800">{ts.theme}</span>
+                    <span className="text-gray-500 ml-1">{'\u2014'} {ts.judgment}</span>
+                  </div>
+                  {ts.keyChecks.length > 0 && (
+                    <ul className="mt-0.5 ml-3 space-y-0.5">
+                      {ts.keyChecks.map((c, j) => (
+                        <li key={j} className="text-[11px] text-gray-500 leading-relaxed flex gap-1.5">
+                          <span className="text-gray-300 flex-shrink-0">{'\u2022'}</span>
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               ))}
             </div>
