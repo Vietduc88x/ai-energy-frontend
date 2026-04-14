@@ -61,6 +61,27 @@ function isDocument(text: string): boolean {
   return text.trim().length > 300;
 }
 
+async function readSseAnswer(res: Response): Promise<string> {
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error('No response body');
+  const decoder = new TextDecoder();
+  let answer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    for (const line of chunk.split('\n')) {
+      if (!line.startsWith('data: ')) continue;
+      try {
+        const event = JSON.parse(line.slice(6));
+        if (event.type === 'token') answer += event.token;
+        if (event.type === 'done') break;
+      } catch {}
+    }
+  }
+  return answer || 'No response.';
+}
+
 const SEVERITY_BAR: Record<string, string> = {
   critical: 'border-l-red-500 bg-red-50',
   high:     'border-l-orange-400 bg-orange-50',
@@ -257,11 +278,14 @@ function AssessInner() {
             history: messages.filter(m => m.kind === 'text').map(m => ({ role: m.role, content: m.content })),
           }),
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error ?? `HTTP ${res.status}`);
+        }
+        const answer = await readSseAnswer(res);
         setMessages(prev => [...prev, {
           role: 'assistant', kind: 'text',
-          content: data.answer ?? data.message ?? 'No response.',
+          content: answer,
         }]);
       } catch (err) {
         setMessages(prev => [...prev, {
