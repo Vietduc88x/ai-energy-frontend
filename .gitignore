@@ -16,3 +16,7 @@ out/
 next-env.d.ts
 
 .gstack/
+
+# MCP config — contains API keys, never commit
+.mcp.json
+energy-mcp-bridge.mjs
