@@ -181,14 +181,14 @@ export default function GuidelinePage() {
         </p>
         <div className="grid grid-cols-2 gap-1.5">
           {[
-            'IRENA Cost Reports 2024', 'EIA Annual Energy Outlook 2025',
-            'BloombergNEF NEO 2025', 'Ember Carbon Intensity Data',
-            'FIDIC Yellow Book 2017', 'IEC 61724-1/2 (PV Monitoring)',
-            'IEC 62446 (PV Documentation)', 'IEC 61400 (Wind Turbines)',
-            'IFC EHS Guidelines', 'NREL ATB 2024',
-            'Vietnam Solar/Wind Policy Pack', 'Philippines GEAP Framework',
-            'India RE Auction Design', 'Australia CIS Guidelines',
-            'TDD Best Practice Guidelines', 'IRENA BESS Cost Data 2024',
+            'IRENA Renewable Power Generation Costs 2024', 'IRENA BESS Cost Data 2024',
+            'EIA Annual Energy Outlook 2025', 'NREL Annual Technology Baseline 2024',
+            'BloombergNEF New Energy Outlook 2025', 'Ember Global Electricity Review 2024',
+            'FIDIC Yellow Book 2017 (2nd Ed.)', 'IFC Environmental, Health & Safety Guidelines',
+            'IEC 61724-1/2 (PV System Monitoring)', 'IEC 62446 (PV System Documentation)',
+            'IEC 61400 Series (Wind Turbines)', 'IEC 60076 (Power Transformers)',
+            'IEC 62933 (Electrical Energy Storage)', 'IEEE 1547 (DER Interconnection)',
+            'Lazard LCOE Analysis v17', 'World Bank ESMAP Solar Resource Data',
           ].map(source => (
             <div key={source} className="flex items-center gap-1.5 text-xs text-gray-600">
               <span className="w-1 h-1 rounded-full bg-emerald-400 flex-shrink-0" />
