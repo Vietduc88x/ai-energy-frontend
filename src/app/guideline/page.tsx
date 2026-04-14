@@ -184,11 +184,9 @@ export default function GuidelinePage() {
             'IRENA Renewable Power Generation Costs 2024', 'IRENA BESS Cost Data 2024',
             'EIA Annual Energy Outlook 2025', 'NREL Annual Technology Baseline 2024',
             'BloombergNEF New Energy Outlook 2025', 'Ember Global Electricity Review 2024',
-            'FIDIC Yellow Book 2017 (2nd Ed.)', 'IFC Environmental, Health & Safety Guidelines',
-            'IEC 61724-1/2 (PV System Monitoring)', 'IEC 62446 (PV System Documentation)',
-            'IEC 61400 Series (Wind Turbines)', 'IEC 60076 (Power Transformers)',
-            'IEC 62933 (Electrical Energy Storage)', 'IEEE 1547 (DER Interconnection)',
-            'Lazard LCOE Analysis v17', 'World Bank ESMAP Solar Resource Data',
+            'IFC Environmental, Health & Safety Guidelines', 'Lazard LCOE Analysis v17',
+            'World Bank ESMAP Solar Resource Data', 'IRENA Renewable Energy Statistics 2024',
+            'Our World in Data — Energy', 'IEA World Energy Outlook 2024',
           ].map(source => (
             <div key={source} className="flex items-center gap-1.5 text-xs text-gray-600">
               <span className="w-1 h-1 rounded-full bg-emerald-400 flex-shrink-0" />
