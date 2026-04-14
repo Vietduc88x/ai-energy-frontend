@@ -56,10 +56,10 @@ function SettingsInner() {
         </div>
         <div className="px-5 py-4 flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-            {user?.name?.charAt(0)?.toUpperCase() ?? user?.email?.charAt(0)?.toUpperCase() ?? '?'}
+            {user?.displayName?.charAt(0)?.toUpperCase() ?? user?.email?.charAt(0)?.toUpperCase() ?? '?'}
           </div>
           <div>
-            <div className="font-medium text-gray-900">{user?.name ?? '—'}</div>
+            <div className="font-medium text-gray-900">{user?.displayName ?? user?.email ?? '—'}</div>
             <div className="text-sm text-gray-400">{user?.email}</div>
           </div>
         </div>
