@@ -35,6 +35,14 @@ export function TopNav({ session }: NavProps) {
       <nav className="flex items-center gap-1">
         <NavLink href="/compare">Chat</NavLink>
         <NavLink href="/guideline">Guideline</NavLink>
+        <a
+          href="https://techmadeeasy.info/blog"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="touch-target flex items-center px-3 py-1.5 rounded-lg text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all"
+        >
+          Blog ↗
+        </a>
         {user?.role === 'admin' && <NavLink href="/admin">Admin</NavLink>}
       </nav>
 
@@ -96,6 +104,17 @@ export function BottomTabs({ session }: NavProps) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       } />
+      <a
+        href="https://techmadeeasy.info/blog"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="touch-target flex flex-col items-center justify-center py-2 px-3 text-[10px] font-medium text-gray-400 transition-colors"
+      >
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
+        <span className="mt-0.5">Blog</span>
+      </a>
     </nav>
   );
 }
